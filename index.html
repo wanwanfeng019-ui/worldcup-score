@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>2026世界杯比分随机抽取器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1f3c 100%);
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 15px;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0,200,100,0.06) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(0,150,255,0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(255,180,0,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 500px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.header .trophy {
+  font-size: 48px;
+  animation: float 3s ease-in-out infinite;
+  display: block;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50% { transform: translateY(-8px) rotate(3deg); }
+}
+
+.header h1 {
+  font-size: 1.6em;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 8px 0 4px;
+  letter-spacing: 1px;
+}
+
+.header .subtitle {
+  color: #6a7d95;
+  font-size: 0.78em;
+  letter-spacing: 3px;
+}
+
+/* Match Card */
+.match-card {
+  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  padding: 28px 18px 22px;
+  backdrop-filter: blur(20px);
+  box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.stage {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.stage span {
+  display: inline-block;
+  background: rgba(255,215,0,0.12);
+  color: #ffd700;
+  padding: 5px 18px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 700;
+  letter-spacing: 2px;
+  border: 1px solid rgba(255,215,0,0.25);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Custom Searchable Picker ── */
+.teams-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.team-slot {
+  flex: 1;
+  text-align: center;
+  position: relative;
+  min-width: 0;
+}
+
+.team-slot .flag {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
+  transition: transform 0.2s;
+}
+
+.picker-wrap {
+  position: relative;
+}
+
+.picker-input {
+  width: 100%;
+  padding: 10px 30px 10px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-align: center;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  caret-color: transparent;
+}
+
+.picker-input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 0 3px rgba(255,215,0,0.12);
+  caret-color: #fff;
+}
+
+.picker-arrow {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255,255,255,0.4);
+  pointer-events: none;
+  font-size: 0.7em;
+  transition: transform 0.2s;
+}
+
+.picker-wrap.open .picker-arrow {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: #1a2a45;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 10px;
+  max-height: 0;
+  overflow: hidden;
+  z-index: 10;
+  transition: max-height 0.25s ease, padding 0.25s ease;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+.picker-wrap.open .dropdown {
+  max-height: 240px;
+  padding: 6px 0;
+}
+
+.dropdown-search {
+  width: calc(100% - 12px);
+  margin: 4px 6px 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  font-size: 0.82em;
+  outline: none;
+}
+
+.dropdown-search:focus {
+  border-color: #ffd700;
+}
+
+.dropdown-list {
+  max-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dropdown-list::-webkit-scrollbar { width: 3px; }
+.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+.dropdown-item {
+  padding: 9px 12px;
+  cursor: pointer;
+  font-size: 0.82em;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s;
+}
+
+.dropdown-item:hover, .dropdown-item.active {
+  background: rgba(255,215,0,0.15);
+  color: #fff;
+}
+
+.dropdown-empty {
+  padding: 14px;
+  text-align: center;
+  color: #666;
+  font-size: 0.78em;
+}
+
+.vs {
+  flex-shrink: 0;
+  font-size: 1.3em;
+  font-weight: 900;
+  color: rgba(255,255,255,0.25);
+  margin-top: 24px;
+  padding: 0 2px;
+}
+
+/* ── Score ── */
+.score-display {
+  text-align: center;
+  margin: 22px 0;
+  min-height: 85px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.score-box {
+  background: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: 18px;
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3.2em;
+  font-weight: 900;
+  color: #fff;
+  transition: all 0.12s;
+  text-shadow: 0 0 25px rgba(255,255,255,0.25);
+  flex-shrink: 0;
+}
+
+.score-box.rolling {
+  animation: shake 0.07s infinite;
+  border-color: #ffd700;
+  box-shadow: 0 0 35px rgba(255,215,0,0.4);
+}
+
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -2px); }
+  75% { transform: translate(-2px, -2px); }
+}
+
+.score-dash {
+  font-size: 2.5em;
+  color: rgba(255,255,255,0.25);
+  font-weight: 300;
+  flex-shrink: 0;
+}
+
+/* ── Buttons ── */
+.actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 13px 22px;
+  border-radius: 12px;
+  border: none;
+  font-size: 0.95em;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  letter-spacing: 0.5px;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn:active { transform: scale(0.96); }
+
+.btn-primary {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  color: #1a1a1a;
+  font-size: 1.15em;
+  padding: 15px 40px;
+  box-shadow: 0 8px 28px rgba(255,180,0,0.3);
+  width: 100%;
+  max-width: 280px;
+}
+
+.btn-primary:active {
+  box-shadow: 0 4px 14px rgba(255,180,0,0.5);
+}
+
+.btn-sm {
+  background: rgba(255,255,255,0.07);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.15);
+  padding: 10px 16px;
+  font-size: 0.82em;
+}
+
+.btn-sm:active {
+  background: rgba(255,255,255,0.14);
+}
+
+/* ── Share bar ── */
+.share-bar {
+  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.btn-copy {
+  background: rgba(255,255,255,0.05);
+  color: #8af;
+  border: 1px solid rgba(100,160,255,0.25);
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 0.78em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.btn-copy:active { background: rgba(100,160,255,0.15); }
+
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffd700;
+  color: #1a1a1a;
+  padding: 10px 24px;
+  border-radius: 22px;
+  font-weight: 700;
+  font-size: 0.9em;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+.toast.show { opacity: 1; }
+
+/* ── Hint ── */
+.prob-hint {
+  text-align: center;
+  margin-top: 12px;
+  font-size: 0.75em;
+  color: #4a5f7a;
+  min-height: 1.2em;
+}
+
+/* ── History ── */
+.history {
+  margin-top: 16px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.history h3 {
+  color: #6a7d95;
+  font-size: 0.8em;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.history-list {
+  max-height: 160px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.history-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  font-size: 0.78em;
+  color: #bbb;
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.history-item .teams { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.history-item .score { font-weight: 900; color: #ffd700; font-size: 1.05em; min-width: 42px; text-align: center; }
+.history-item .time { color: #555; font-size: 0.8em; min-width: 40px; text-align: right; }
+
+.history-list::-webkit-scrollbar { width: 3px; }
+.history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+
+.footer {
+  text-align: center;
+  margin-top: 20px;
+  color: #3a4f65;
+  font-size: 0.72em;
+  letter-spacing: 1px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 380px) {
+  .header h1 { font-size: 1.3em; }
+  .team-slot .flag { font-size: 38px; }
+  .score-box { width: 72px; height: 72px; font-size: 2.5em; }
+  .match-card { padding: 20px 12px 16px; }
+  .picker-input { font-size: 0.75em; padding: 9px 24px 9px 8px; }
+  .btn { padding: 11px 16px; font-size: 0.82em; }
+  .btn-primary { padding: 13px 28px; font-size: 1em; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <span class="trophy">🏆</span>
+    <h1>2026 世界杯比分抽取器</h1>
+    <div class="subtitle">FIFA WORLD CUP · USA · CAN · MEX</div>
+  </div>
+
+  <div class="match-card">
+    <div class="stage">
+      <span id="stageLabel">🎲 随机抽签</span>
+    </div>
+
+    <!-- Teams row with custom pickers -->
+    <div class="teams-row">
+      <div class="team-slot" id="slotA">
+        <span class="flag" id="flagA">🇺🇸</span>
+        <div class="picker-wrap" id="pickerWrapA">
+          <input class="picker-input" id="pickerInputA" readonly placeholder="选择球队…">
+          <span class="picker-arrow">▼</span>
+          <div class="dropdown" id="dropdownA">
+            <input class="dropdown-search" id="searchA" placeholder="搜索球队…">
+            <div class="dropdown-list" id="listA"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="vs">VS</div>
+
+      <div class="team-slot" id="slotB">
+        <span class="flag" id="flagB">🇲🇽</span>
+        <div class="picker-wrap" id="pickerWrapB">
+          <input class="picker-input" id="pickerInputB" readonly placeholder="选择球队…">
+          <span class="picker-arrow">▼</span>
+          <div class="dropdown" id="dropdownB">
+            <input class="dropdown-search" id="searchB" placeholder="搜索球队…">
+            <div class="dropdown-list" id="listB"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="score-display">
+      <div class="score-box" id="scoreA">-</div>
+      <span class="score-dash">:</span>
+      <div class="score-box" id="scoreB">-</div>
+    </div>
+
+    <!-- Main buttons -->
+    <div class="actions">
+      <button class="btn btn-primary" id="btnRoll">🎰 抽取比分</button>
+      <button class="btn btn-sm" id="btnTeams">🔀 随机换队</button>
+      <button class="btn btn-sm" id="btnClear">🗑 清除</button>
+    </div>
+
+    <!-- Share -->
+    <div class="share-bar">
+      <button class="btn-copy" id="btnCopy">📋 复制结果</button>
+    </div>
+
+    <div class="prob-hint" id="probHint">点击按钮随机生成比分 · 概率模拟真实比赛</div>
+  </div>
+
+  <!-- History -->
+  <div class="history" id="historyPanel" style="display:none;">
+    <h3>📋 抽取记录</h3>
+    <div class="history-list" id="historyList"></div>
+  </div>
+
+  <div class="footer">⚽ 2026 FIFA World Cup · 仅供娱乐 ⚽</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+// 66 Teams
+// ═══════════════════════════════
+const TEAMS = [
+  { name: '🇺🇸 美国', flag: '🇺🇸', code: 'USA' },
+  { name: '🇨🇦 加拿大', flag: '🇨🇦', code: 'CAN' },
+  { name: '🇲🇽 墨西哥', flag: '🇲🇽', code: 'MEX' },
+  { name: '🇯🇵 日本', flag: '🇯🇵', code: 'JPN' },
+  { name: '🇰🇷 韩国', flag: '🇰🇷', code: 'KOR' },
+  { name: '🇮🇷 伊朗', flag: '🇮🇷', code: 'IRN' },
+  { name: '🇸🇦 沙特阿拉伯', flag: '🇸🇦', code: 'KSA' },
+  { name: '🇦🇺 澳大利亚', flag: '🇦🇺', code: 'AUS' },
+  { name: '🇮🇶 伊拉克', flag: '🇮🇶', code: 'IRQ' },
+  { name: '🇦🇪 阿联酋', flag: '🇦🇪', code: 'UAE' },
+  { name: '🇶🇦 卡塔尔', flag: '🇶🇦', code: 'QAT' },
+  { name: '🇺🇿 乌兹别克斯坦', flag: '🇺🇿', code: 'UZB' },
+  { name: '🇨🇳 中国', flag: '🇨🇳', code: 'CHN' },
+  { name: '🇯🇴 约旦', flag: '🇯🇴', code: 'JOR' },
+  { name: '🇴🇲 阿曼', flag: '🇴🇲', code: 'OMA' },
+  { name: '🇸🇾 叙利亚', flag: '🇸🇾', code: 'SYR' },
+  { name: '🇧🇭 巴林', flag: '🇧🇭', code: 'BHR' },
+  { name: '🇹🇭 泰国', flag: '🇹🇭', code: 'THA' },
+  { name: '🇻🇳 越南', flag: '🇻🇳', code: 'VIE' },
+  { name: '🇰🇵 朝鲜', flag: '🇰🇵', code: 'PRK' },
+  // Africa
+  { name: '🇲🇦 摩洛哥', flag: '🇲🇦', code: 'MAR' },
+  { name: '🇸🇳 塞内加尔', flag: '🇸🇳', code: 'SEN' },
+  { name: '🇪🇬 埃及', flag: '🇪🇬', code: 'EGY' },
+  { name: '🇳🇬 尼日利亚', flag: '🇳🇬', code: 'NGA' },
+  { name: '🇨🇲 喀麦隆', flag: '🇨🇲', code: 'CMR' },
+  { name: '🇬🇭 加纳', flag: '🇬🇭', code: 'GHA' },
+  { name: '🇨🇮 科特迪瓦', flag: '🇨🇮', code: 'CIV' },
+  { name: '🇩🇿 阿尔及利亚', flag: '🇩🇿', code: 'ALG' },
+  { name: '🇹🇳 突尼斯', flag: '🇹🇳', code: 'TUN' },
+  { name: '🇿🇦 南非', flag: '🇿🇦', code: 'RSA' },
+  { name: '🇲🇱 马里', flag: '🇲🇱', code: 'MLI' },
+  { name: '🇨🇩 刚果(金)', flag: '🇨🇩', code: 'COD' },
+  { name: '🇧🇫 布基纳法索', flag: '🇧🇫', code: 'BFA' },
+  { name: '🇬🇳 几内亚', flag: '🇬🇳', code: 'GUI' },
+  { name: '🇨🇷 哥斯达黎加', flag: '🇨🇷', code: 'CRC' },
+  { name: '🇵🇦 巴拿马', flag: '🇵🇦', code: 'PAN' },
+  { name: '🇯🇲 牙买加', flag: '🇯🇲', code: 'JAM' },
+  { name: '🇭🇳 洪都拉斯', flag: '🇭🇳', code: 'HON' },
+  { name: '🇸🇻 萨尔瓦多', flag: '🇸🇻', code: 'SLV' },
+  { name: '🇹🇹 特立尼达和多巴哥', flag: '🇹🇹', code: 'TRI' },
+  { name: '🇦🇷 阿根廷', flag: '🇦🇷', code: 'ARG' },
+  { name: '🇧🇷 巴西', flag: '🇧🇷', code: 'BRA' },
+  { name: '🇺🇾 乌拉圭', flag: '🇺🇾', code: 'URU' },
+  { name: '🇨🇴 哥伦比亚', flag: '🇨🇴', code: 'COL' },
+  { name: '🇪🇨 厄瓜多尔', flag: '🇪🇨', code: 'ECU' },
+  { name: '🇵🇾 巴拉圭', flag: '🇵🇾', code: 'PAR' },
+  { name: '🇨🇱 智利', flag: '🇨🇱', code: 'CHI' },
+  { name: '🇵🇪 秘鲁', flag: '🇵🇪', code: 'PER' },
+  { name: '🇧🇴 玻利维亚', flag: '🇧🇴', code: 'BOL' },
+  { name: '🇻🇪 委内瑞拉', flag: '🇻🇪', code: 'VEN' },
+  { name: '🇳🇿 新西兰', flag: '🇳🇿', code: 'NZL' },
+  { name: '🇸🇧 所罗门群岛', flag: '🇸🇧', code: 'SOL' },
+  { name: '🇫🇷 法国', flag: '🇫🇷', code: 'FRA' },
+  { name: '🇪🇸 西班牙', flag: '🇪🇸', code: 'ESP' },
+  { name: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 英格兰', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', code: 'ENG' },
+  { name: '🇩🇪 德国', flag: '🇩🇪', code: 'GER' },
+  { name: '🇳🇱 荷兰', flag: '🇳🇱', code: 'NED' },
+  { name: '🇵🇹 葡萄牙', flag: '🇵🇹', code: 'POR' },
+  { name: '🇮🇹 意大利', flag: '🇮🇹', code: 'ITA' },
+  { name: '🇧🇪 比利时', flag: '🇧🇪', code: 'BEL' },
+  { name: '🇭🇷 克罗地亚', flag: '🇭🇷', code: 'CRO' },
+  { name: '🇩🇰 丹麦', flag: '🇩🇰', code: 'DEN' },
+  { name: '🇨🇭 瑞士', flag: '🇨🇭', code: 'SUI' },
+  { name: '🇵🇱 波兰', flag: '🇵🇱', code: 'POL' },
+  { name: '🇸🇪 瑞典', flag: '🇸🇪', code: 'SWE' },
+  { name: '🇷🇸 塞尔维亚', flag: '🇷🇸', code: 'SRB' },
+  { name: '🇺🇦 乌克兰', flag: '🇺🇦', code: 'UKR' },
+  { name: '🇦🇹 奥地利', flag: '🇦🇹', code: 'AUT' },
+  { name: '🇳🇴 挪威', flag: '🇳🇴', code: 'NOR' },
+  { name: '🇹🇷 土耳其', flag: '🇹🇷', code: 'TUR' },
+  { name: '🇬🇷 希腊', flag: '🇬🇷', code: 'GRE' },
+  { name: '🏴󠁧󠁢󠁳󠁣󠁴󠁿 苏格兰', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', code: 'SCO' },
+  { name: '🏴󠁧󠁢󠁷󠁬󠁳󠁿 威尔士', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', code: 'WAL' },
+  { name: '🇮🇪 爱尔兰', flag: '🇮🇪', code: 'IRL' },
+  { name: '🇸🇰 斯洛伐克', flag: '🇸🇰', code: 'SVK' },
+  { name: '🇨🇿 捷克', flag: '🇨🇿', code: 'CZE' },
+  { name: '🇭🇺 匈牙利', flag: '🇭🇺', code: 'HUN' },
+  { name: '🇷🇴 罗马尼亚', flag: '🇷🇴', code: 'ROU' },
+  { name: '🇸🇮 斯洛文尼亚', flag: '🇸🇮', code: 'SVN' },
+  { name: '🇮🇸 冰岛', flag: '🇮🇸', code: 'ISL' },
+  { name: '🇫🇮 芬兰', flag: '🇫🇮', code: 'FIN' },
+  { name: '🇧🇬 保加利亚', flag: '🇧🇬', code: 'BUL' },
+  { name: '🇧🇦 波黑', flag: '🇧🇦', code: 'BIH' },
+  { name: '🇦🇱 阿尔巴尼亚', flag: '🇦🇱', code: 'ALB' },
+  { name: '🇲🇪 黑山', flag: '🇲🇪', code: 'MNE' },
+  { name: '🇬🇪 格鲁吉亚', flag: '🇬🇪', code: 'GEO' },
+  { name: '🇲🇰 北马其顿', flag: '🇲🇰', code: 'MKD' },
+  { name: '🇮🇱 以色列', flag: '🇮🇱', code: 'ISR' },
+  { name: '🇷🇺 俄罗斯', flag: '🇷🇺', code: 'RUS' },
+];
+
+const STAGES = [
+  '🎲 随机抽签',
+  '🏟 小组赛第1轮',
+  '🏟 小组赛第2轮',
+  '🏟 小组赛第3轮',
+  '🔥 1/16 决赛',
+  '🔥 1/8 决赛',
+  '⚡ 1/4 决赛',
+  '💥 半决赛',
+  '🥉 三四名决赛',
+  '🏆 决赛',
+];
+
+// Realistic score distribution (based on World Cup history)
+const SCORE_WEIGHTS = [
+  [1,0,18],[2,1,15],[0,0,12],[1,1,12],[2,0,10],[3,1,8],[3,0,6],
+  [2,2,6],[0,1,5],[1,2,4],[3,2,4],[4,1,3],[4,0,2],[4,2,2],
+  [0,2,2],[0,3,1.5],[1,3,1.5],[3,3,1.5],[4,3,1],[5,0,0.8],
+  [5,1,0.8],[5,2,0.6],[2,3,0.6],[0,4,0.4],[1,4,0.3],[5,3,0.2],
+  [6,0,0.15],[6,1,0.15],[4,4,0.1],
+];
+
+// ═══ State ═══
+let selectedA = 0; // index into TEAMS
+let selectedB = 1;
+let history = [];
+let openPicker = null; // 'A' | 'B' | null
+
+// ═══ DOM refs ═══
+const $ = id => document.getElementById(id);
+const flagA = $('flagA'), flagB = $('flagB');
+const inputA = $('pickerInputA'), inputB = $('pickerInputB');
+const wrapA = $('pickerWrapA'), wrapB = $('pickerWrapB');
+const listA = $('listA'), listB = $('listB');
+const searchA = $('searchA'), searchB = $('searchB');
+const scoreA = $('scoreA'), scoreB = $('scoreB');
+const stageLabel = $('stageLabel');
+const probHint = $('probHint');
+const historyPanel = $('historyPanel');
+const historyList = $('historyList');
+const toast = $('toast');
+
+// ═══ Initialize ═══
+function init() {
+  randomTeams();
+  renderList('A', '');
+  renderList('B', '');
+
+  // Picker A toggle
+  inputA.addEventListener('click', () => togglePicker('A'));
+  inputA.addEventListener('focus', () => { inputA.blur(); }); // prevent keyboard on mobile
+  searchA.addEventListener('input', () => renderList('A', searchA.value));
+  searchA.addEventListener('click', e => e.stopPropagation());
+
+  // Picker B toggle
+  inputB.addEventListener('click', () => togglePicker('B'));
+  inputB.addEventListener('focus', () => { inputB.blur(); });
+  searchB.addEventListener('input', () => renderList('B', searchB.value));
+  searchB.addEventListener('click', e => e.stopPropagation());
+
+  // Close pickers on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#pickerWrapA') && !e.target.closest('#pickerWrapB')) {
+      closeAllPickers();
+    }
+  });
+
+  // Buttons
+  $('btnRoll').addEventListener('click', roll);
+  $('btnTeams').addEventListener('click', randomTeams);
+  $('btnClear').addEventListener('click', clearHistory);
+  $('btnCopy').addEventListener('click', copyResult);
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.code === 'Space') {
+      if (openPicker) return; // don't roll while picking
+      e.preventDefault();
+      roll();
+    }
+  });
+}
+
+// ═══ Custom Picker Logic ═══
+function togglePicker(side) {
+  const wrap = side === 'A' ? wrapA : wrapB;
+  const search = side === 'A' ? searchA : searchB;
+  const isOpen = wrap.classList.contains('open');
+
+  closeAllPickers();
+
+  if (!isOpen) {
+    wrap.classList.add('open');
+    openPicker = side;
+    renderList(side, '');
+    search.value = '';
+    setTimeout(() => search.focus(), 50);
+  }
+}
+
+function closeAllPickers() {
+  wrapA.classList.remove('open');
+  wrapB.classList.remove('open');
+  openPicker = null;
+}
+
+function renderList(side, filter) {
+  const list = side === 'A' ? listA : listB;
+  const q = filter.toLowerCase().trim();
+  const filtered = TEAMS
+    .map((t, i) => ({ ...t, idx: i }))
+    .filter(t => !q || t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q));
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="dropdown-empty">无匹配球队</div>';
+    return;
+  }
+
+  list.innerHTML = filtered.map(t =>
+    `<div class="dropdown-item" data-idx="${t.idx}" data-side="${side}">${t.name}</div>`
+  ).join('');
+
+  // Click handlers on items
+  list.querySelectorAll('.dropdown-item').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(el.dataset.idx);
+      selectTeam(side, idx);
+    });
+  });
+}
+
+function selectTeam(side, idx) {
+  if (side === 'A') {
+    selectedA = idx;
+    inputA.value = TEAMS[idx].name;
+    flagA.textContent = TEAMS[idx].flag;
+  } else {
+    selectedB = idx;
+    inputB.value = TEAMS[idx].name;
+    flagB.textContent = TEAMS[idx].flag;
+  }
+  closeAllPickers();
+}
+
+// ═══ Random Teams ═══
+function randomTeams() {
+  let i, j;
+  do {
+    i = Math.floor(Math.random() * TEAMS.length);
+    j = Math.floor(Math.random() * TEAMS.length);
+  } while (i === j);
+  selectTeam('A', i);
+  selectTeam('B', j);
+}
+
+// ═══ Score Roll ═══
+function randomScore() {
+  const total = SCORE_WEIGHTS.reduce((s, x) => s + x[2], 0);
+  let r = Math.random() * total;
+  for (const [h, a, w] of SCORE_WEIGHTS) {
+    r -= w;
+    if (r <= 0) return [h, a];
+  }
+  return [1, 0];
+}
+
+function roll() {
+  const teamA = TEAMS[selectedA];
+  const teamB = TEAMS[selectedB];
+  const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
+  stageLabel.textContent = stage;
+
+  // Disable
+  const btns = document.querySelectorAll('button');
+  btns.forEach(b => b.disabled = true);
+
+  scoreA.classList.add('rolling');
+  scoreB.classList.add('rolling');
+
+  let ticks = 0;
+  const totalTicks = 18;
+
+  const interval = setInterval(() => {
+    scoreA.textContent = Math.floor(Math.random() * 7);
+    scoreB.textContent = Math.floor(Math.random() * 7);
+    ticks++;
+
+    if (ticks >= totalTicks) {
+      clearInterval(interval);
+
+      const [h, a] = randomScore();
+      scoreA.textContent = h;
+      scoreB.textContent = a;
+      scoreA.classList.remove('rolling');
+      scoreB.classList.remove('rolling');
+
+      // Flash
+      scoreA.style.color = '#ffd700';
+      scoreB.style.color = '#ffd700';
+      setTimeout(() => {
+        scoreA.style.color = '#fff';
+        scoreB.style.color = '#fff';
+      }, 300);
+
+      btns.forEach(b => b.disabled = false);
+
+      // History
+      addHistory(teamA, teamB, h, a, stage);
+
+      // Hint
+      const diff = Math.abs(h - a);
+      let desc;
+      if (h === a) desc = '平局！势均力敌 ⚖️';
+      else if (diff === 1) desc = '一球小胜，激烈胶着 🔥';
+      else if (diff === 2) desc = '两球优势，稳扎稳打 💪';
+      else if (diff === 3) desc = '大比分领先 ⚡';
+      else desc = '屠杀局 💀';
+      probHint.textContent = `${teamA.code} ${h}-${a} ${teamB.code}  |  ${desc}`;
+    }
+  }, 80);
+}
+
+// ═══ History ═══
+function addHistory(teamA, teamB, h, a, stage) {
+  const time = new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  history.unshift({ teamA, teamB, h, a, stage, time });
+  if (history.length > 50) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  if (history.length === 0) {
+    historyPanel.style.display = 'none';
+    return;
+  }
+  historyPanel.style.display = 'block';
+  historyList.innerHTML = history.map(x => `
+    <div class="history-item">
+      <span class="teams">${x.teamA.flag} ${x.teamA.code} vs ${x.teamB.flag} ${x.teamB.code}</span>
+      <span class="score">${x.h} : ${x.a}</span>
+      <span class="time">${x.time}</span>
+    </div>
+  `).join('');
+}
+
+function clearHistory() {
+  history = [];
+  renderHistory();
+  probHint.textContent = '点击按钮随机生成比分 · 概率模拟真实比赛';
+}
+
+// ═══ Copy ═══
+function copyResult() {
+  const h = scoreA.textContent;
+  const a = scoreB.textContent;
+  if (h === '-' || a === '-') {
+    showToast('⚠️ 请先抽取比分');
+    return;
+  }
+  const teamA = TEAMS[selectedA];
+  const teamB = TEAMS[selectedB];
+  const text = `⚽ 2026世界杯比分抽取\n\n${teamA.flag} ${teamA.name}  ${h} : ${a}  ${teamB.name} ${teamB.flag}\n\n${stageLabel.textContent}\n\n🎰 仅供娱乐`;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => showToast('✅ 已复制，去粘贴吧！'));
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('✅ 已复制，去粘贴吧！');
+  }
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => toast.classList.remove('show'), 1800);
+}
+
+// ═══ Start ═══
+init();
+</script>
+</body>
+</html>
