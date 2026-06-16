@@ -900,23 +900,24 @@ function spinWheel() {
   btnSpin.disabled = true;
   wheelResult.innerHTML = '<span>转动中…</span>';
 
-  // Random target: pick an item
   const targetIdx = Math.floor(Math.random() * N);
 
-  // Calculate target angle so pointer (top = -PI/2) aligns with segment center
-  const segCenter = -Math.PI / 2 - (targetIdx * ARC);
-  // Add several full rotations + randomness within segment
+  // Desired absolute angle: pointer at top (-PI/2) points to segment targetIdx center
+  const desired = ((-Math.PI/2 - targetIdx * ARC) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const normStart = ((wheelAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  let shortDelta = desired - normStart;
+  if (shortDelta < 0) shortDelta += 2*Math.PI;
   const fullSpins = (4 + Math.floor(Math.random() * 4)) * Math.PI * 2;
-  const targetAngle = fullSpins + segCenter + (Math.random() - 0.5) * ARC * 0.6;
+  const jitter = (Math.random() - 0.5) * ARC * 0.6;
+  const targetAngle = fullSpins + shortDelta + jitter;
 
   const startAngle = wheelAngle;
-  const duration = 4000; // ms
+  const duration = 4000;
   const startTime = performance.now();
 
   function animate(now) {
     const elapsed = now - startTime;
     const progress = Math.min(elapsed / duration, 1);
-    // Ease out cubic
     const eased = 1 - Math.pow(1 - progress, 3);
     wheelAngle = startAngle + targetAngle * eased;
     drawWheel();
@@ -1053,9 +1054,14 @@ function spinSurnameWheel() {
   surnameResult.innerHTML = '<span>转动中…</span>';
 
   const targetIdx = Math.floor(Math.random() * SN);
-  const segCenter = -Math.PI / 2 - (targetIdx * SARC);
+
+  const desired = ((-Math.PI/2 - targetIdx * SARC) % (2*Math.PI) + 2*Math.PI) % (2*Math.PI);
+  const normStart = ((surnameAngle % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI);
+  let shortDelta = desired - normStart;
+  if (shortDelta < 0) shortDelta += 2*Math.PI;
   const fullSpins = (4 + Math.floor(Math.random() * 4)) * Math.PI * 2;
-  const targetAngle = fullSpins + segCenter + (Math.random() - 0.5) * SARC * 0.5;
+  const jitter = (Math.random() - 0.5) * SARC * 0.5;
+  const targetAngle = fullSpins + shortDelta + jitter;
 
   const startAngle = surnameAngle;
   const duration = 4000;
