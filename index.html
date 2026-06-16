@@ -71,6 +71,33 @@ body::before{
 
 .vs{flex-shrink:0;font-size:1.2em;font-weight:900;color:rgba(255,255,255,.2);margin-top:42px;padding:0 2px}
 
+/* ── Possession Slider ── */
+.possession-bar{
+  display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 4px;
+}
+.pos-label{
+  font-size:.85em;font-weight:800;color:#fff;min-width:36px;text-align:center;
+  transition:color .3s;
+}
+.pos-track-wrap{
+  position:relative;width:160px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;
+  overflow:visible;
+}
+.pos-slider{
+  position:absolute;top:-4px;left:0;width:100%;height:16px;
+  -webkit-appearance:none;appearance:none;background:transparent;z-index:2;cursor:pointer;margin:0;
+}
+.pos-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:#ffd700;border:3px solid #1a2a45;cursor:pointer;
+  box-shadow:0 0 15px rgba(255,215,0,.5);transition:transform .15s;
+}
+.pos-slider::-webkit-slider-thumb:active{transform:scale(1.2)}
+.pos-fill{
+  position:absolute;top:0;left:0;height:100%;border-radius:4px;
+  background:linear-gradient(90deg,#54a0ff,#ffd700);transition:width .15s;pointer-events:none;
+}
+
 /* ── Analysis bar ── */
 .analysis-bar{text-align:center;margin:4px 0 10px;min-height:1.5em}
 .analysis-bar span{font-size:.7em;padding:4px 12px;border-radius:10px;letter-spacing:1px}
@@ -250,6 +277,16 @@ body::before{
     </div>
 
     <!-- Pre-match analysis -->
+    <!-- Possession Slider -->
+    <div class="possession-bar">
+      <span class="pos-label" id="posLabelA">50%</span>
+      <div class="pos-track-wrap">
+        <input type="range" class="pos-slider" id="posSlider" min="25" max="75" value="50" step="1">
+        <div class="pos-fill" id="posFill" style="width:50%"></div>
+      </div>
+      <span class="pos-label" id="posLabelB">50%</span>
+    </div>
+
     <div class="analysis-bar"><span id="analysisText"></span></div>
 
     <div class="score-display">
@@ -260,7 +297,6 @@ body::before{
 
     <div class="actions">
       <button class="btn btn-primary" id="btnRoll">🎰 抽取比分</button>
-      <button class="btn btn-sm" id="btnTeams">🔀 随机换队</button>
       <button class="btn btn-sm" id="btnInsight">📊 实力对比</button>
       <button class="btn btn-sm" id="btnClear">🗑 清除</button>
     </div>
@@ -517,10 +553,22 @@ function init() {
   });
 
   $('btnRoll').addEventListener('click',roll);
-  $('btnTeams').addEventListener('click',randomTeams);
   $('btnClear').addEventListener('click',clearHistory);
   $('btnCopy').addEventListener('click',copyResult);
   $('btnInsight').addEventListener('click',showInsight);
+
+  // Possession slider
+  const posSlider = $('posSlider');
+  const posFill = $('posFill');
+  const posLabelA = $('posLabelA');
+  const posLabelB = $('posLabelB');
+  posSlider.addEventListener('input', () => {
+    const v = parseInt(posSlider.value);
+    posFill.style.width = v + '%';
+    posLabelA.textContent = v + '%';
+    posLabelB.textContent = (100 - v) + '%';
+    updateAnalysis();
+  });
 
   document.addEventListener('keydown',e=>{
     if((e.key==='Enter'||e.code==='Space')&&!openPicker){e.preventDefault();roll();}
@@ -574,34 +622,40 @@ function randomTeams() {
 function updateAnalysis() {
   const a=TEAMS[selA], b=TEAMS[selB];
   const gap=a.rating-b.rating;
+  const posA=parseInt($('posSlider').value);
+  const possessionBias=(posA-50)*2.5;
+  const effGap=gap*0.6+possessionBias*0.4;
   const tierA=getTier(a.rating), tierB=getTier(b.rating);
-  const abs=Math.abs(gap);
+  const abs=Math.abs(effGap);
   let emoji,label,bg;
-  if(abs<=3)      {emoji='⚔️';label='势均力敌，胜负难料';bg='rgba(255,255,255,.06)';}
-  else if(abs<=6) {emoji='🤏';label=(gap>0?a.code:b.code)+' 略占上风';bg='rgba(255,255,255,.06)';}
-  else if(abs<=12){emoji='📈';label=(gap>0?a.code:b.code)+' 明显占优';bg='rgba(255,180,0,.08)';}
-  else if(abs<=18){emoji='🔥';label=(gap>0?a.code:b.code)+' 实力碾压';bg='rgba(255,107,107,.08)';}
-  else            {emoji='💀';label=(gap>0?a.code:b.code)+' 降维打击';bg='rgba(255,50,50,.1)';}
-  analysisText.innerHTML=`<span style="background:${bg};color:#fff">${emoji} ${label}  |  ${tierA.desc} vs ${tierB.desc}</span>`;
+  if(abs<=3)      {emoji='⚔️';label='势均力敌';bg='rgba(255,255,255,.06)';}
+  else if(abs<=6) {emoji='🤏';label=(effGap>0?a.code:b.code)+' 略占优';bg='rgba(255,255,255,.06)';}
+  else if(abs<=12){emoji='📈';label=(effGap>0?a.code:b.code)+' 明显占优';bg='rgba(255,180,0,.08)';}
+  else if(abs<=18){emoji='🔥';label=(effGap>0?a.code:b.code)+' 实力碾压';bg='rgba(255,107,107,.08)';}
+  else            {emoji='💀';label=(effGap>0?a.code:b.code)+' 降维打击';bg='rgba(255,50,50,.1)';}
+  analysisText.innerHTML=`<span style="background:${bg};color:#fff">${emoji} ${label}  |  控球 ${posA}%-${100-posA}%  |  ${tierA.desc} vs ${tierB.desc}</span>`;
 }
 
 function showInsight() {
   const a=TEAMS[selA], b=TEAMS[selB];
-  const gap=a.rating-b.rating;
-  const abs=Math.abs(gap);
+  const ratingGap=a.rating-b.rating;
+  const posA=parseInt($('posSlider').value);
+  const possessionBias=(posA-50)*2.5;
+  const effGap=ratingGap*0.6+possessionBias*0.4;
+  const abs=Math.abs(effGap);
   const tierA=getTier(a.rating), tierB=getTier(b.rating);
 
   $('insightNameA').textContent=a.flag+' '+a.code;
-  $('insightRatingA').textContent='⭐ '+a.rating+' / '+tierA.desc;
+  $('insightRatingA').textContent='⭐ '+a.rating+' / '+tierA.desc+' | 控球 '+posA+'%';
   $('insightNameB').textContent=b.flag+' '+b.code;
-  $('insightRatingB').textContent='⭐ '+b.rating+' / '+tierB.desc;
+  $('insightRatingB').textContent='⭐ '+b.rating+' / '+tierB.desc+' | 控球 '+(100-posA)+'%';
 
-  $('insightBarA').style.width=(a.rating)+'%';
-  $('insightBarA').style.background=tierA.c;
-  $('insightBarB').style.width=(b.rating)+'%';
-  $('insightBarB').style.background=tierB.c;
+  $('insightBarA').style.width=(posA)+'%';
+  $('insightBarA').style.background='linear-gradient(90deg,'+tierA.c+',#ffd700)';
+  $('insightBarB').style.width=(100-posA)+'%';
+  $('insightBarB').style.background='linear-gradient(90deg,#ffd700,'+tierB.c+')';
 
-  $('insightGap').textContent=abs+' 分';
+  $('insightGap').textContent='实力差 '+Math.abs(ratingGap)+' 分 | 有效差 '+Math.round(Math.abs(effGap))+' 分';
   $('insightGap').style.color=abs<=6?'#54a0ff':abs<=12?'#ff9f43':'#ff6b6b';
 
   let expect;
@@ -610,7 +664,8 @@ function showInsight() {
   else if(abs<=12) expect='强方胜率约 65-75%';
   else if(abs<=18) expect='强方胜率约 78-88%';
   else expect='强方胜率 > 90%';
-  $('insightExpect').textContent=expect;
+  $('insightExpect').textContent='控球率影响: '+(effGap>0?a.code:b.code)+' 有利';
+  $('insightExpect').textContent=expect+' | '+$('insightExpect').textContent;
 
   $('insightPop').classList.add('show');
 }
@@ -629,7 +684,13 @@ function randomScore(gap) {
 
 function roll() {
   const teamA=TEAMS[selA], teamB=TEAMS[selB];
-  const gap=teamA.rating-teamB.rating;
+  const posA = parseInt($('posSlider').value);
+  const posB = 100 - posA;
+  // Blend rating gap with possession: possession tilts the effective strength
+  const ratingGap = teamA.rating - teamB.rating;
+  const possessionBias = (posA - 50) * 2.5; // range: -62.5 to +62.5
+  const effectiveGap = ratingGap * 0.6 + possessionBias * 0.4;
+
   const stage=STAGES[Math.floor(Math.random()*STAGES.length)];
   stageLabel.textContent=stage;
 
@@ -645,38 +706,37 @@ function roll() {
     ticks++;
     if(ticks>=18){
       clearInterval(interval);
-      const [h,a]=randomScore(gap);
+      const [h,a]=randomScore(effectiveGap);
       scoreA.textContent=h; scoreB.textContent=a;
       scoreA.classList.remove('rolling'); scoreB.classList.remove('rolling');
       scoreA.style.color='#ffd700'; scoreB.style.color='#ffd700';
       setTimeout(()=>{scoreA.style.color='#fff';scoreB.style.color='#fff';},300);
       btns.forEach(b=>b.disabled=false);
-      addHistory(teamA,teamB,h,a,gap,stage);
-      updateHint(teamA,teamB,h,a,gap);
+      addHistory(teamA,teamB,h,a,ratingGap,effectiveGap,posA,stage);
+      updateHint(teamA,teamB,h,a,ratingGap,effectiveGap,posA);
     }
   },80);
 }
 
-function updateHint(teamA,teamB,h,a,gap) {
-  const abs=Math.abs(gap);
+function updateHint(teamA,teamB,h,a,ratingGap,effGap,posA) {
+  const abs=Math.abs(effGap);
   const winner=h>a?teamA:h<a?teamB:null;
   const diff=Math.abs(h-a);
   let desc='',emoji='';
 
   if(winner===null){desc='平局！';emoji='⚖️';}
-  else if(gap>0&&winner===teamA){desc='强队取胜';emoji=abs>12?'✅':'👌';}
-  else if(gap<0&&winner===teamB){desc='强队取胜';emoji=abs>12?'✅':'👌';}
-  else if(gap>0&&winner===teamB){desc='爆冷！';emoji='💥';}
-  else if(gap<0&&winner===teamA){desc='爆冷！';emoji='💥';}
+  else if(effGap>0&&winner===teamA){desc='符合预期';emoji='✅';}
+  else if(effGap<0&&winner===teamB){desc='符合预期';emoji='✅';}
+  else{desc='爆冷！';emoji='💥';}
 
   if(diff>=4) desc+=' 大比分！';
-  probHint.textContent=`${teamA.code} ${h}-${a} ${teamB.code}  |  ${emoji} ${desc}`;
+  probHint.textContent=`${teamA.code} ${h}-${a} ${teamB.code}  |  ${emoji} ${desc}  |  控球 ${posA}%-${100-posA}%`;
 }
 
 // ═══ History ═══
-function addHistory(teamA,teamB,h,a,gap,stage) {
+function addHistory(teamA,teamB,h,a,ratingGap,effGap,posA,stage) {
   const time=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-  history.unshift({teamA,teamB,h,a,gap,stage,time});
+  history.unshift({teamA,teamB,h,a,ratingGap,effGap,posA,stage,time});
   if(history.length>50) history.pop();
   renderHistory();
 }
@@ -700,8 +760,9 @@ function copyResult() {
   const h=scoreA.textContent, a=scoreB.textContent;
   if(h==='-'||a==='-'){showToast('⚠️ 请先抽取比分');return;}
   const teamA=TEAMS[selA], teamB=TEAMS[selB];
+  const posA=parseInt($('posSlider').value);
   const gap=Math.abs(teamA.rating-teamB.rating);
-  const text=`⚽ 2026世界杯比分\n\n${teamA.flag} ${teamA.name} (${teamA.rating})  ${h} : ${a}  (${teamB.rating}) ${teamB.name} ${teamB.flag}\n\n${stageLabel.textContent}\n实力差: ${gap}分 | 🎰 仅供娱乐`;
+  const text=`⚽ 2026世界杯比分\n\n${teamA.flag} ${teamA.name} (${teamA.rating})  ${h} : ${a}  (${teamB.rating}) ${teamB.name} ${teamB.flag}\n\n${stageLabel.textContent}\n控球率: ${posA}%-${100-posA}% | 实力差: ${gap}分 | 🎰 仅供娱乐`;
   if(navigator.clipboard&&navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(()=>showToast('✅ 已复制！'));
   } else {
