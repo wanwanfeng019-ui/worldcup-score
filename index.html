@@ -5,465 +5,138 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>2026世界杯比分随机抽取器</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;
+  background:linear-gradient(135deg,#0a1628,#1a2a4a 50%,#0d1f3c);
+  font-family:'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,sans-serif;
+  display:flex;justify-content:center;align-items:center;padding:15px;
+  -webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;
+}
+body::before{
+  content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+  background:radial-gradient(ellipse at 20% 50%,rgba(0,200,100,.06),transparent 50%),
+             radial-gradient(ellipse at 80% 20%,rgba(0,150,255,.05),transparent 50%),
+             radial-gradient(ellipse at 50% 80%,rgba(255,180,0,.04),transparent 50%);
+  pointer-events:none;z-index:0;
+}
+.container{position:relative;z-index:1;width:100%;max-width:520px}
 
-body {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0d1f3c 100%);
-  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 15px;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-  -webkit-user-select: none;
+.header{text-align:center;margin-bottom:20px}
+.header .trophy{font-size:42px;display:block;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+.header h1{font-size:1.5em;font-weight:900;background:linear-gradient(135deg,#ffd700,#ffaa00,#ffd700);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin:6px 0 4px;letter-spacing:1px}
+.header .subtitle{color:#6a7d95;font-size:.75em;letter-spacing:3px}
+
+.match-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:24px 16px 20px;
+  backdrop-filter:blur(20px);box-shadow:0 30px 60px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.05);
 }
 
-body::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(ellipse at 20% 50%, rgba(0,200,100,0.06) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 20%, rgba(0,150,255,0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 80%, rgba(255,180,0,0.04) 0%, transparent 50%);
-  pointer-events: none;
-  z-index: 0;
-}
+.stage{text-align:center;margin-bottom:18px}
+.stage span{display:inline-block;background:rgba(255,215,0,.12);color:#ffd700;padding:5px 18px;border-radius:20px;font-size:.78em;font-weight:700;letter-spacing:2px;border:1px solid rgba(255,215,0,.25)}
 
-.container {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 500px;
-}
+/* ── Teams Row ── */
+.teams-row{display:flex;align-items:flex-start;justify-content:space-between;gap:6px;margin-bottom:8px}
+.team-slot{flex:1;text-align:center;min-width:0}
+.team-slot .flag{font-size:42px;display:block;margin-bottom:2px;filter:drop-shadow(0 3px 6px rgba(0,0,0,.3))}
+.team-strength{display:inline-block;font-size:.6em;font-weight:800;padding:2px 8px;border-radius:8px;margin-bottom:5px;letter-spacing:1px}
 
-/* Header */
-.header {
-  text-align: center;
-  margin-bottom: 25px;
+.picker-wrap{position:relative}
+.picker-input{
+  width:100%;padding:9px 26px 9px 9px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.07);
+  color:#fff;font-size:.8em;font-weight:600;text-align:center;outline:none;cursor:pointer;transition:all .2s;caret-color:transparent;
 }
+.picker-input:focus{border-color:#ffd700;box-shadow:0 0 0 3px rgba(255,215,0,.12);caret-color:#fff}
+.picker-arrow{position:absolute;right:7px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.4);pointer-events:none;font-size:.65em;transition:transform .2s}
+.picker-wrap.open .picker-arrow{transform:translateY(-50%) rotate(180deg)}
 
-.header .trophy {
-  font-size: 48px;
-  animation: float 3s ease-in-out infinite;
-  display: block;
+.dropdown{
+  position:absolute;top:100%;left:0;right:0;margin-top:4px;
+  background:#1a2a45;border:1px solid rgba(255,255,255,.2);border-radius:10px;
+  max-height:0;overflow:hidden;z-index:10;transition:max-height .25s,padding .25s;box-shadow:0 10px 30px rgba(0,0,0,.5);
 }
+.picker-wrap.open .dropdown{max-height:230px;padding:5px 0}
+.dropdown-search{width:calc(100% - 10px);margin:3px 5px 5px;padding:7px 9px;border-radius:8px;border:1px solid rgba(255,255,255,.15);background:rgba(0,0,0,.3);color:#fff;font-size:.78em;outline:none}
+.dropdown-search:focus{border-color:#ffd700}
+.dropdown-list{max-height:170px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.dropdown-list::-webkit-scrollbar{width:3px}
+.dropdown-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:3px}
+.dropdown-item{padding:8px 10px;cursor:pointer;font-size:.78em;color:#ccc;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s;display:flex;align-items:center;gap:6px}
+.dropdown-item:hover,.dropdown-item.active{background:rgba(255,215,0,.15);color:#fff}
+.dropdown-item .tier-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dropdown-empty{padding:14px;text-align:center;color:#666;font-size:.75em}
 
-@keyframes float {
-  0%, 100% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-8px) rotate(3deg); }
-}
+.vs{flex-shrink:0;font-size:1.2em;font-weight:900;color:rgba(255,255,255,.2);margin-top:42px;padding:0 2px}
 
-.header h1 {
-  font-size: 1.6em;
-  font-weight: 900;
-  background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 8px 0 4px;
-  letter-spacing: 1px;
-}
-
-.header .subtitle {
-  color: #6a7d95;
-  font-size: 0.78em;
-  letter-spacing: 3px;
-}
-
-/* Match Card */
-.match-card {
-  background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 24px;
-  padding: 28px 18px 22px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 30px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
-}
-
-.stage {
-  text-align: center;
-  margin-bottom: 22px;
-}
-
-.stage span {
-  display: inline-block;
-  background: rgba(255,215,0,0.12);
-  color: #ffd700;
-  padding: 5px 18px;
-  border-radius: 20px;
-  font-size: 0.8em;
-  font-weight: 700;
-  letter-spacing: 2px;
-  border: 1px solid rgba(255,215,0,0.25);
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Custom Searchable Picker ── */
-.teams-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.team-slot {
-  flex: 1;
-  text-align: center;
-  position: relative;
-  min-width: 0;
-}
-
-.team-slot .flag {
-  font-size: 48px;
-  display: block;
-  margin-bottom: 6px;
-  filter: drop-shadow(0 3px 6px rgba(0,0,0,0.3));
-  transition: transform 0.2s;
-}
-
-.picker-wrap {
-  position: relative;
-}
-
-.picker-input {
-  width: 100%;
-  padding: 10px 30px 10px 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,0.2);
-  background: rgba(255,255,255,0.07);
-  color: #fff;
-  font-size: 0.85em;
-  font-weight: 600;
-  text-align: center;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  caret-color: transparent;
-}
-
-.picker-input:focus {
-  border-color: #ffd700;
-  box-shadow: 0 0 0 3px rgba(255,215,0,0.12);
-  caret-color: #fff;
-}
-
-.picker-arrow {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: rgba(255,255,255,0.4);
-  pointer-events: none;
-  font-size: 0.7em;
-  transition: transform 0.2s;
-}
-
-.picker-wrap.open .picker-arrow {
-  transform: translateY(-50%) rotate(180deg);
-}
-
-.dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 4px;
-  background: #1a2a45;
-  border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 10px;
-  max-height: 0;
-  overflow: hidden;
-  z-index: 10;
-  transition: max-height 0.25s ease, padding 0.25s ease;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-}
-
-.picker-wrap.open .dropdown {
-  max-height: 240px;
-  padding: 6px 0;
-}
-
-.dropdown-search {
-  width: calc(100% - 12px);
-  margin: 4px 6px 6px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.15);
-  background: rgba(0,0,0,0.3);
-  color: #fff;
-  font-size: 0.82em;
-  outline: none;
-}
-
-.dropdown-search:focus {
-  border-color: #ffd700;
-}
-
-.dropdown-list {
-  max-height: 180px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.dropdown-list::-webkit-scrollbar { width: 3px; }
-.dropdown-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
-
-.dropdown-item {
-  padding: 9px 12px;
-  cursor: pointer;
-  font-size: 0.82em;
-  color: #ccc;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  transition: background 0.15s;
-}
-
-.dropdown-item:hover, .dropdown-item.active {
-  background: rgba(255,215,0,0.15);
-  color: #fff;
-}
-
-.dropdown-empty {
-  padding: 14px;
-  text-align: center;
-  color: #666;
-  font-size: 0.78em;
-}
-
-.vs {
-  flex-shrink: 0;
-  font-size: 1.3em;
-  font-weight: 900;
-  color: rgba(255,255,255,0.25);
-  margin-top: 24px;
-  padding: 0 2px;
-}
+/* ── Analysis bar ── */
+.analysis-bar{text-align:center;margin:4px 0 10px;min-height:1.5em}
+.analysis-bar span{font-size:.7em;padding:4px 12px;border-radius:10px;letter-spacing:1px}
 
 /* ── Score ── */
-.score-display {
-  text-align: center;
-  margin: 22px 0;
-  min-height: 85px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
+.score-display{text-align:center;margin:16px 0;min-height:80px;display:flex;align-items:center;justify-content:center;gap:12px}
+.score-box{
+  background:linear-gradient(180deg,rgba(0,0,0,.5),rgba(0,0,0,.3));
+  border:2px solid rgba(255,255,255,.15);border-radius:16px;
+  width:82px;height:82px;display:flex;align-items:center;justify-content:center;
+  font-size:2.8em;font-weight:900;color:#fff;transition:all .12s;
+  text-shadow:0 0 25px rgba(255,255,255,.25);flex-shrink:0;
 }
-
-.score-box {
-  background: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.3));
-  border: 2px solid rgba(255,255,255,0.15);
-  border-radius: 18px;
-  width: 90px;
-  height: 90px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3.2em;
-  font-weight: 900;
-  color: #fff;
-  transition: all 0.12s;
-  text-shadow: 0 0 25px rgba(255,255,255,0.25);
-  flex-shrink: 0;
-}
-
-.score-box.rolling {
-  animation: shake 0.07s infinite;
-  border-color: #ffd700;
-  box-shadow: 0 0 35px rgba(255,215,0,0.4);
-}
-
-@keyframes shake {
-  0%, 100% { transform: translate(0, 0); }
-  25% { transform: translate(-2px, 2px); }
-  50% { transform: translate(2px, -2px); }
-  75% { transform: translate(-2px, -2px); }
-}
-
-.score-dash {
-  font-size: 2.5em;
-  color: rgba(255,255,255,0.25);
-  font-weight: 300;
-  flex-shrink: 0;
-}
+.score-box.rolling{animation:shake .07s infinite;border-color:#ffd700;box-shadow:0 0 35px rgba(255,215,0,.4)}
+@keyframes shake{0%,100%{transform:translate(0,0)}25%{transform:translate(-2px,2px)}50%{transform:translate(2px,-2px)}75%{transform:translate(-2px,-2px)}}
+.score-dash{font-size:2.2em;color:rgba(255,255,255,.2);font-weight:300;flex-shrink:0}
 
 /* ── Buttons ── */
-.actions {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-top: 20px;
-}
+.actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
+.btn{padding:12px 18px;border-radius:12px;border:none;font-size:.9em;font-weight:700;cursor:pointer;transition:all .25s;letter-spacing:.5px;outline:none}
+.btn:active{transform:scale(.96)}
+.btn-primary{background:linear-gradient(135deg,#ffd700,#ffaa00);color:#1a1a1a;font-size:1.1em;padding:14px 36px;box-shadow:0 8px 28px rgba(255,180,0,.3);width:100%;max-width:260px}
+.btn-sm{background:rgba(255,255,255,.07);color:#ccc;border:1px solid rgba(255,255,255,.15);padding:9px 14px;font-size:.78em}
+.share-bar{margin-top:10px;display:flex;gap:8px;justify-content:center}
+.btn-copy{background:rgba(255,255,255,.05);color:#8af;border:1px solid rgba(100,160,255,.25);padding:8px 14px;border-radius:10px;font-size:.75em;font-weight:600;cursor:pointer;transition:all .2s;outline:none}
+.btn-copy:active{background:rgba(100,160,255,.15)}
 
-.btn {
-  padding: 13px 22px;
-  border-radius: 12px;
-  border: none;
-  font-size: 0.95em;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.25s;
-  letter-spacing: 0.5px;
-  outline: none;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.btn:active { transform: scale(0.96); }
-
-.btn-primary {
-  background: linear-gradient(135deg, #ffd700, #ffaa00);
-  color: #1a1a1a;
-  font-size: 1.15em;
-  padding: 15px 40px;
-  box-shadow: 0 8px 28px rgba(255,180,0,0.3);
-  width: 100%;
-  max-width: 280px;
-}
-
-.btn-primary:active {
-  box-shadow: 0 4px 14px rgba(255,180,0,0.5);
-}
-
-.btn-sm {
-  background: rgba(255,255,255,0.07);
-  color: #ccc;
-  border: 1px solid rgba(255,255,255,0.15);
-  padding: 10px 16px;
-  font-size: 0.82em;
-}
-
-.btn-sm:active {
-  background: rgba(255,255,255,0.14);
-}
-
-/* ── Share bar ── */
-.share-bar {
-  margin-top: 14px;
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.btn-copy {
-  background: rgba(255,255,255,0.05);
-  color: #8af;
-  border: 1px solid rgba(100,160,255,0.25);
-  padding: 9px 16px;
-  border-radius: 10px;
-  font-size: 0.78em;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-  outline: none;
-}
-
-.btn-copy:active { background: rgba(100,160,255,0.15); }
-
-.toast {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #ffd700;
-  color: #1a1a1a;
-  padding: 10px 24px;
-  border-radius: 22px;
-  font-weight: 700;
-  font-size: 0.9em;
-  z-index: 100;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
-}
-
-.toast.show { opacity: 1; }
-
-/* ── Hint ── */
-.prob-hint {
-  text-align: center;
-  margin-top: 12px;
-  font-size: 0.75em;
-  color: #4a5f7a;
-  min-height: 1.2em;
-}
+.prob-hint{text-align:center;margin-top:10px;font-size:.72em;color:#4a5f7a;min-height:1.2em}
 
 /* ── History ── */
-.history {
-  margin-top: 16px;
-  background: rgba(0,0,0,0.3);
-  border-radius: 14px;
-  padding: 14px 16px;
-  border: 1px solid rgba(255,255,255,0.05);
-}
+.history{margin-top:14px;background:rgba(0,0,0,.3);border-radius:14px;padding:12px 14px;border:1px solid rgba(255,255,255,.05)}
+.history h3{color:#6a7d95;font-size:.78em;letter-spacing:2px;margin-bottom:8px;text-align:center}
+.history-list{max-height:150px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:4px}
+.history-item{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:.72em;color:#bbb;animation:fadeIn .35s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.history-item .teams{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.history-item .score{font-weight:900;color:#ffd700;font-size:1em;min-width:38px;text-align:center}
+.history-item .time{color:#555;font-size:.75em;min-width:38px;text-align:right}
+.history-list::-webkit-scrollbar{width:3px}
+.history-list::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:3px}
 
-.history h3 {
-  color: #6a7d95;
-  font-size: 0.8em;
-  letter-spacing: 2px;
-  margin-bottom: 8px;
-  text-align: center;
-}
+.footer{text-align:center;margin-top:18px;color:#3a4f65;font-size:.7em;letter-spacing:1px}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#ffd700;color:#1a1a1a;padding:10px 24px;border-radius:22px;font-weight:700;font-size:.85em;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.toast.show{opacity:1}
 
-.history-list {
-  max-height: 160px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
+/* ── Match insight popup ── */
+.insight-pop{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);z-index:50;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.insight-pop.show{opacity:1;pointer-events:auto}
+.insight-card{background:#1a2a45;border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:30px 24px;text-align:center;max-width:320px;width:90%}
+.insight-card h2{color:#ffd700;font-size:1.2em;margin-bottom:16px}
+.insight-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.insight-row:last-child{border-bottom:none}
+.insight-label{color:#8a9bb5;font-size:.8em}
+.insight-val{color:#fff;font-weight:700;font-size:.85em}
+.insight-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin:8px 0;overflow:hidden}
+.insight-bar-fill{height:100%;border-radius:3px;transition:width .5s}
+.insight-close{margin-top:16px;padding:10px 30px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer;font-size:.85em}
 
-.history-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 7px 12px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 8px;
-  font-size: 0.78em;
-  color: #bbb;
-  animation: fadeIn 0.35s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.history-item .teams { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.history-item .score { font-weight: 900; color: #ffd700; font-size: 1.05em; min-width: 42px; text-align: center; }
-.history-item .time { color: #555; font-size: 0.8em; min-width: 40px; text-align: right; }
-
-.history-list::-webkit-scrollbar { width: 3px; }
-.history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
-
-.footer {
-  text-align: center;
-  margin-top: 20px;
-  color: #3a4f65;
-  font-size: 0.72em;
-  letter-spacing: 1px;
-}
-
-/* ── Responsive ── */
-@media (max-width: 380px) {
-  .header h1 { font-size: 1.3em; }
-  .team-slot .flag { font-size: 38px; }
-  .score-box { width: 72px; height: 72px; font-size: 2.5em; }
-  .match-card { padding: 20px 12px 16px; }
-  .picker-input { font-size: 0.75em; padding: 9px 24px 9px 8px; }
-  .btn { padding: 11px 16px; font-size: 0.82em; }
-  .btn-primary { padding: 13px 28px; font-size: 1em; }
+@media(max-width:380px){
+  .header h1{font-size:1.2em}
+  .team-slot .flag{font-size:34px}
+  .score-box{width:68px;height:68px;font-size:2.2em}
+  .match-card{padding:18px 10px 14px}
+  .picker-input{font-size:.7em;padding:8px 22px 8px 7px}
+  .btn{padding:10px 14px;font-size:.78em}
+  .btn-primary{padding:12px 24px;font-size:.95em}
 }
 </style>
 </head>
@@ -473,460 +146,454 @@ body::before {
   <div class="header">
     <span class="trophy">🏆</span>
     <h1>2026 世界杯比分抽取器</h1>
-    <div class="subtitle">FIFA WORLD CUP · USA · CAN · MEX</div>
+    <div class="subtitle">FIFA WORLD CUP · 实力分级 · 真实概率</div>
   </div>
 
   <div class="match-card">
-    <div class="stage">
-      <span id="stageLabel">🎲 随机抽签</span>
-    </div>
+    <div class="stage"><span id="stageLabel">🎲 随机抽签</span></div>
 
-    <!-- Teams row with custom pickers -->
     <div class="teams-row">
       <div class="team-slot" id="slotA">
-        <span class="flag" id="flagA">🇺🇸</span>
+        <span class="flag" id="flagA">🇦🇷</span>
+        <span class="team-strength" id="strengthA">S</span>
         <div class="picker-wrap" id="pickerWrapA">
           <input class="picker-input" id="pickerInputA" readonly placeholder="选择球队…">
           <span class="picker-arrow">▼</span>
           <div class="dropdown" id="dropdownA">
-            <input class="dropdown-search" id="searchA" placeholder="搜索球队…">
+            <input class="dropdown-search" id="searchA" placeholder="搜索…">
             <div class="dropdown-list" id="listA"></div>
           </div>
         </div>
       </div>
-
       <div class="vs">VS</div>
-
       <div class="team-slot" id="slotB">
-        <span class="flag" id="flagB">🇲🇽</span>
+        <span class="flag" id="flagB">🇧🇷</span>
+        <span class="team-strength" id="strengthB">S</span>
         <div class="picker-wrap" id="pickerWrapB">
           <input class="picker-input" id="pickerInputB" readonly placeholder="选择球队…">
           <span class="picker-arrow">▼</span>
           <div class="dropdown" id="dropdownB">
-            <input class="dropdown-search" id="searchB" placeholder="搜索球队…">
+            <input class="dropdown-search" id="searchB" placeholder="搜索…">
             <div class="dropdown-list" id="listB"></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Score -->
+    <!-- Pre-match analysis -->
+    <div class="analysis-bar"><span id="analysisText"></span></div>
+
     <div class="score-display">
       <div class="score-box" id="scoreA">-</div>
       <span class="score-dash">:</span>
       <div class="score-box" id="scoreB">-</div>
     </div>
 
-    <!-- Main buttons -->
     <div class="actions">
       <button class="btn btn-primary" id="btnRoll">🎰 抽取比分</button>
       <button class="btn btn-sm" id="btnTeams">🔀 随机换队</button>
+      <button class="btn btn-sm" id="btnInsight">📊 实力对比</button>
       <button class="btn btn-sm" id="btnClear">🗑 清除</button>
     </div>
-
-    <!-- Share -->
     <div class="share-bar">
       <button class="btn-copy" id="btnCopy">📋 复制结果</button>
     </div>
-
-    <div class="prob-hint" id="probHint">点击按钮随机生成比分 · 概率模拟真实比赛</div>
+    <div class="prob-hint" id="probHint">点击按钮随机生成比分 · 实力差距影响结果概率</div>
   </div>
 
-  <!-- History -->
-  <div class="history" id="historyPanel" style="display:none;">
+  <div class="history" id="historyPanel" style="display:none">
     <h3>📋 抽取记录</h3>
     <div class="history-list" id="historyList"></div>
   </div>
+  <div class="footer">⚽ 2026 FIFA World Cup · 89支球队 · 实力分级 · 仅供娱乐 ⚽</div>
+</div>
 
-  <div class="footer">⚽ 2026 FIFA World Cup · 仅供娱乐 ⚽</div>
+<!-- Insight modal -->
+<div class="insight-pop" id="insightPop">
+  <div class="insight-card">
+    <h2>📊 实力对比</h2>
+    <div class="insight-row"><span class="insight-label" id="insightNameA"></span><span class="insight-val" id="insightRatingA"></span></div>
+    <div class="insight-bar"><div class="insight-bar-fill" id="insightBarA"></div></div>
+    <div class="insight-row"><span class="insight-label" id="insightNameB"></span><span class="insight-val" id="insightRatingB"></span></div>
+    <div class="insight-bar"><div class="insight-bar-fill" id="insightBarB"></div></div>
+    <div class="insight-row"><span class="insight-label">实力差距</span><span class="insight-val" id="insightGap"></span></div>
+    <div class="insight-row"><span class="insight-label">预期局面</span><span class="insight-val" id="insightExpect"></span></div>
+    <button class="insight-close" onclick="closeInsight()">关闭</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 // ═══════════════════════════════
-// 66 Teams
+// 89 Teams with FIFA-style ratings (50-95)
 // ═══════════════════════════════
 const TEAMS = [
-  { name: '🇺🇸 美国', flag: '🇺🇸', code: 'USA' },
-  { name: '🇨🇦 加拿大', flag: '🇨🇦', code: 'CAN' },
-  { name: '🇲🇽 墨西哥', flag: '🇲🇽', code: 'MEX' },
-  { name: '🇯🇵 日本', flag: '🇯🇵', code: 'JPN' },
-  { name: '🇰🇷 韩国', flag: '🇰🇷', code: 'KOR' },
-  { name: '🇮🇷 伊朗', flag: '🇮🇷', code: 'IRN' },
-  { name: '🇸🇦 沙特阿拉伯', flag: '🇸🇦', code: 'KSA' },
-  { name: '🇦🇺 澳大利亚', flag: '🇦🇺', code: 'AUS' },
-  { name: '🇮🇶 伊拉克', flag: '🇮🇶', code: 'IRQ' },
-  { name: '🇦🇪 阿联酋', flag: '🇦🇪', code: 'UAE' },
-  { name: '🇶🇦 卡塔尔', flag: '🇶🇦', code: 'QAT' },
-  { name: '🇺🇿 乌兹别克斯坦', flag: '🇺🇿', code: 'UZB' },
-  { name: '🇨🇳 中国', flag: '🇨🇳', code: 'CHN' },
-  { name: '🇯🇴 约旦', flag: '🇯🇴', code: 'JOR' },
-  { name: '🇴🇲 阿曼', flag: '🇴🇲', code: 'OMA' },
-  { name: '🇸🇾 叙利亚', flag: '🇸🇾', code: 'SYR' },
-  { name: '🇧🇭 巴林', flag: '🇧🇭', code: 'BHR' },
-  { name: '🇹🇭 泰国', flag: '🇹🇭', code: 'THA' },
-  { name: '🇻🇳 越南', flag: '🇻🇳', code: 'VIE' },
-  { name: '🇰🇵 朝鲜', flag: '🇰🇵', code: 'PRK' },
-  // Africa
-  { name: '🇲🇦 摩洛哥', flag: '🇲🇦', code: 'MAR' },
-  { name: '🇸🇳 塞内加尔', flag: '🇸🇳', code: 'SEN' },
-  { name: '🇪🇬 埃及', flag: '🇪🇬', code: 'EGY' },
-  { name: '🇳🇬 尼日利亚', flag: '🇳🇬', code: 'NGA' },
-  { name: '🇨🇲 喀麦隆', flag: '🇨🇲', code: 'CMR' },
-  { name: '🇬🇭 加纳', flag: '🇬🇭', code: 'GHA' },
-  { name: '🇨🇮 科特迪瓦', flag: '🇨🇮', code: 'CIV' },
-  { name: '🇩🇿 阿尔及利亚', flag: '🇩🇿', code: 'ALG' },
-  { name: '🇹🇳 突尼斯', flag: '🇹🇳', code: 'TUN' },
-  { name: '🇿🇦 南非', flag: '🇿🇦', code: 'RSA' },
-  { name: '🇲🇱 马里', flag: '🇲🇱', code: 'MLI' },
-  { name: '🇨🇩 刚果(金)', flag: '🇨🇩', code: 'COD' },
-  { name: '🇧🇫 布基纳法索', flag: '🇧🇫', code: 'BFA' },
-  { name: '🇬🇳 几内亚', flag: '🇬🇳', code: 'GUI' },
-  { name: '🇨🇷 哥斯达黎加', flag: '🇨🇷', code: 'CRC' },
-  { name: '🇵🇦 巴拿马', flag: '🇵🇦', code: 'PAN' },
-  { name: '🇯🇲 牙买加', flag: '🇯🇲', code: 'JAM' },
-  { name: '🇭🇳 洪都拉斯', flag: '🇭🇳', code: 'HON' },
-  { name: '🇸🇻 萨尔瓦多', flag: '🇸🇻', code: 'SLV' },
-  { name: '🇹🇹 特立尼达和多巴哥', flag: '🇹🇹', code: 'TRI' },
-  { name: '🇦🇷 阿根廷', flag: '🇦🇷', code: 'ARG' },
-  { name: '🇧🇷 巴西', flag: '🇧🇷', code: 'BRA' },
-  { name: '🇺🇾 乌拉圭', flag: '🇺🇾', code: 'URU' },
-  { name: '🇨🇴 哥伦比亚', flag: '🇨🇴', code: 'COL' },
-  { name: '🇪🇨 厄瓜多尔', flag: '🇪🇨', code: 'ECU' },
-  { name: '🇵🇾 巴拉圭', flag: '🇵🇾', code: 'PAR' },
-  { name: '🇨🇱 智利', flag: '🇨🇱', code: 'CHI' },
-  { name: '🇵🇪 秘鲁', flag: '🇵🇪', code: 'PER' },
-  { name: '🇧🇴 玻利维亚', flag: '🇧🇴', code: 'BOL' },
-  { name: '🇻🇪 委内瑞拉', flag: '🇻🇪', code: 'VEN' },
-  { name: '🇳🇿 新西兰', flag: '🇳🇿', code: 'NZL' },
-  { name: '🇸🇧 所罗门群岛', flag: '🇸🇧', code: 'SOL' },
-  { name: '🇫🇷 法国', flag: '🇫🇷', code: 'FRA' },
-  { name: '🇪🇸 西班牙', flag: '🇪🇸', code: 'ESP' },
-  { name: '🏴󠁧󠁢󠁥󠁮󠁧󠁿 英格兰', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', code: 'ENG' },
-  { name: '🇩🇪 德国', flag: '🇩🇪', code: 'GER' },
-  { name: '🇳🇱 荷兰', flag: '🇳🇱', code: 'NED' },
-  { name: '🇵🇹 葡萄牙', flag: '🇵🇹', code: 'POR' },
-  { name: '🇮🇹 意大利', flag: '🇮🇹', code: 'ITA' },
-  { name: '🇧🇪 比利时', flag: '🇧🇪', code: 'BEL' },
-  { name: '🇭🇷 克罗地亚', flag: '🇭🇷', code: 'CRO' },
-  { name: '🇩🇰 丹麦', flag: '🇩🇰', code: 'DEN' },
-  { name: '🇨🇭 瑞士', flag: '🇨🇭', code: 'SUI' },
-  { name: '🇵🇱 波兰', flag: '🇵🇱', code: 'POL' },
-  { name: '🇸🇪 瑞典', flag: '🇸🇪', code: 'SWE' },
-  { name: '🇷🇸 塞尔维亚', flag: '🇷🇸', code: 'SRB' },
-  { name: '🇺🇦 乌克兰', flag: '🇺🇦', code: 'UKR' },
-  { name: '🇦🇹 奥地利', flag: '🇦🇹', code: 'AUT' },
-  { name: '🇳🇴 挪威', flag: '🇳🇴', code: 'NOR' },
-  { name: '🇹🇷 土耳其', flag: '🇹🇷', code: 'TUR' },
-  { name: '🇬🇷 希腊', flag: '🇬🇷', code: 'GRE' },
-  { name: '🏴󠁧󠁢󠁳󠁣󠁴󠁿 苏格兰', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', code: 'SCO' },
-  { name: '🏴󠁧󠁢󠁷󠁬󠁳󠁿 威尔士', flag: '🏴󠁧󠁢󠁷󠁬󠁳󠁿', code: 'WAL' },
-  { name: '🇮🇪 爱尔兰', flag: '🇮🇪', code: 'IRL' },
-  { name: '🇸🇰 斯洛伐克', flag: '🇸🇰', code: 'SVK' },
-  { name: '🇨🇿 捷克', flag: '🇨🇿', code: 'CZE' },
-  { name: '🇭🇺 匈牙利', flag: '🇭🇺', code: 'HUN' },
-  { name: '🇷🇴 罗马尼亚', flag: '🇷🇴', code: 'ROU' },
-  { name: '🇸🇮 斯洛文尼亚', flag: '🇸🇮', code: 'SVN' },
-  { name: '🇮🇸 冰岛', flag: '🇮🇸', code: 'ISL' },
-  { name: '🇫🇮 芬兰', flag: '🇫🇮', code: 'FIN' },
-  { name: '🇧🇬 保加利亚', flag: '🇧🇬', code: 'BUL' },
-  { name: '🇧🇦 波黑', flag: '🇧🇦', code: 'BIH' },
-  { name: '🇦🇱 阿尔巴尼亚', flag: '🇦🇱', code: 'ALB' },
-  { name: '🇲🇪 黑山', flag: '🇲🇪', code: 'MNE' },
-  { name: '🇬🇪 格鲁吉亚', flag: '🇬🇪', code: 'GEO' },
-  { name: '🇲🇰 北马其顿', flag: '🇲🇰', code: 'MKD' },
-  { name: '🇮🇱 以色列', flag: '🇮🇱', code: 'ISR' },
-  { name: '🇷🇺 俄罗斯', flag: '🇷🇺', code: 'RUS' },
+  // S: Champions (90-95)
+  { name:'🇦🇷 阿根廷', flag:'🇦🇷', code:'ARG', rating:95 },
+  { name:'🇫🇷 法国', flag:'🇫🇷', code:'FRA', rating:93 },
+  { name:'🇧🇷 巴西', flag:'🇧🇷', code:'BRA', rating:92 },
+  // A: Elite (86-89)
+  { name:'🇪🇸 西班牙', flag:'🇪🇸', code:'ESP', rating:89 },
+  { name:'🏴󠁧󠁢󠁥󠁮󠁧󠁿 英格兰', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', code:'ENG', rating:89 },
+  { name:'🇩🇪 德国', flag:'🇩🇪', code:'GER', rating:88 },
+  { name:'🇵🇹 葡萄牙', flag:'🇵🇹', code:'POR', rating:87 },
+  { name:'🇳🇱 荷兰', flag:'🇳🇱', code:'NED', rating:87 },
+  { name:'🇮🇹 意大利', flag:'🇮🇹', code:'ITA', rating:86 },
+  { name:'🇧🇪 比利时', flag:'🇧🇪', code:'BEL', rating:85 },
+  // B: Strong (80-84)
+  { name:'🇭🇷 克罗地亚', flag:'🇭🇷', code:'CRO', rating:84 },
+  { name:'🇺🇾 乌拉圭', flag:'🇺🇾', code:'URU', rating:83 },
+  { name:'🇲🇦 摩洛哥', flag:'🇲🇦', code:'MAR', rating:82 },
+  { name:'🇨🇴 哥伦比亚', flag:'🇨🇴', code:'COL', rating:81 },
+  { name:'🇩🇰 丹麦', flag:'🇩🇰', code:'DEN', rating:80 },
+  { name:'🇨🇭 瑞士', flag:'🇨🇭', code:'SUI', rating:80 },
+  // C: Solid (76-79)
+  { name:'🇯🇵 日本', flag:'🇯🇵', code:'JPN', rating:79 },
+  { name:'🇺🇸 美国', flag:'🇺🇸', code:'USA', rating:78 },
+  { name:'🇲🇽 墨西哥', flag:'🇲🇽', code:'MEX', rating:78 },
+  { name:'🇸🇳 塞内加尔', flag:'🇸🇳', code:'SEN', rating:78 },
+  { name:'🇰🇷 韩国', flag:'🇰🇷', code:'KOR', rating:78 },
+  { name:'🇦🇹 奥地利', flag:'🇦🇹', code:'AUT', rating:77 },
+  { name:'🇷🇸 塞尔维亚', flag:'🇷🇸', code:'SRB', rating:77 },
+  { name:'🇺🇦 乌克兰', flag:'🇺🇦', code:'UKR', rating:77 },
+  { name:'🇵🇱 波兰', flag:'🇵🇱', code:'POL', rating:76 },
+  { name:'🇸🇪 瑞典', flag:'🇸🇪', code:'SWE', rating:76 },
+  { name:'🇹🇷 土耳其', flag:'🇹🇷', code:'TUR', rating:76 },
+  // D: Mid-table (72-75)
+  { name:'🇪🇬 埃及', flag:'🇪🇬', code:'EGY', rating:75 },
+  { name:'🇳🇬 尼日利亚', flag:'🇳🇬', code:'NGA', rating:75 },
+  { name:'🇨🇮 科特迪瓦', flag:'🇨🇮', code:'CIV', rating:75 },
+  { name:'🇩🇿 阿尔及利亚', flag:'🇩🇿', code:'ALG', rating:74 },
+  { name:'🇨🇲 喀麦隆', flag:'🇨🇲', code:'CMR', rating:74 },
+  { name:'🇬🇭 加纳', flag:'🇬🇭', code:'GHA', rating:74 },
+  { name:'🇪🇨 厄瓜多尔', flag:'🇪🇨', code:'ECU', rating:74 },
+  { name:'🇳🇴 挪威', flag:'🇳🇴', code:'NOR', rating:74 },
+  { name:'🏴󠁧󠁢󠁳󠁣󠁴󠁿 苏格兰', flag:'🏴󠁧󠁢󠁳󠁣󠁴󠁿', code:'SCO', rating:74 },
+  { name:'🇨🇿 捷克', flag:'🇨🇿', code:'CZE', rating:74 },
+  { name:'🇷🇺 俄罗斯', flag:'🇷🇺', code:'RUS', rating:74 },
+  { name:'🇹🇳 突尼斯', flag:'🇹🇳', code:'TUN', rating:73 },
+  { name:'🇨🇱 智利', flag:'🇨🇱', code:'CHI', rating:73 },
+  { name:'🇭🇺 匈牙利', flag:'🇭🇺', code:'HUN', rating:73 },
+  { name:'🇷🇴 罗马尼亚', flag:'🇷🇴', code:'ROU', rating:73 },
+  { name:'🇬🇷 希腊', flag:'🇬🇷', code:'GRE', rating:73 },
+  { name:'🇦🇺 澳大利亚', flag:'🇦🇺', code:'AUS', rating:73 },
+  { name:'🇮🇷 伊朗', flag:'🇮🇷', code:'IRN', rating:73 },
+  { name:'🏴󠁧󠁢󠁷󠁬󠁳󠁿 威尔士', flag:'🏴󠁧󠁢󠁷󠁬󠁳󠁿', code:'WAL', rating:73 },
+  { name:'🇮🇪 爱尔兰', flag:'🇮🇪', code:'IRL', rating:73 },
+  { name:'🇵🇾 巴拉圭', flag:'🇵🇾', code:'PAR', rating:73 },
+  { name:'🇸🇰 斯洛伐克', flag:'🇸🇰', code:'SVK', rating:72 },
+  { name:'🇮🇱 以色列', flag:'🇮🇱', code:'ISR', rating:72 },
+  { name:'🇸🇦 沙特阿拉伯', flag:'🇸🇦', code:'KSA', rating:72 },
+  { name:'🇵🇪 秘鲁', flag:'🇵🇪', code:'PER', rating:72 },
+  { name:'🇨🇦 加拿大', flag:'🇨🇦', code:'CAN', rating:72 },
+  { name:'🇨🇷 哥斯达黎加', flag:'🇨🇷', code:'CRC', rating:72 },
+  { name:'🇮🇸 冰岛', flag:'🇮🇸', code:'ISL', rating:72 },
+  // E: Developing (68-71)
+  { name:'🇿🇦 南非', flag:'🇿🇦', code:'RSA', rating:71 },
+  { name:'🇲🇱 马里', flag:'🇲🇱', code:'MLI', rating:71 },
+  { name:'🇧🇫 布基纳法索', flag:'🇧🇫', code:'BFA', rating:70 },
+  { name:'🇨🇩 刚果(金)', flag:'🇨🇩', code:'COD', rating:70 },
+  { name:'🇬🇳 几内亚', flag:'🇬🇳', code:'GUI', rating:70 },
+  { name:'🇯🇲 牙买加', flag:'🇯🇲', code:'JAM', rating:71 },
+  { name:'🇵🇦 巴拿马', flag:'🇵🇦', code:'PAN', rating:71 },
+  { name:'🇶🇦 卡塔尔', flag:'🇶🇦', code:'QAT', rating:71 },
+  { name:'🇮🇶 伊拉克', flag:'🇮🇶', code:'IRQ', rating:71 },
+  { name:'🇦🇪 阿联酋', flag:'🇦🇪', code:'UAE', rating:70 },
+  { name:'🇺🇿 乌兹别克斯坦', flag:'🇺🇿', code:'UZB', rating:69 },
+  { name:'🇸🇮 斯洛文尼亚', flag:'🇸🇮', code:'SVN', rating:71 },
+  { name:'🇫🇮 芬兰', flag:'🇫🇮', code:'FIN', rating:70 },
+  { name:'🇧🇦 波黑', flag:'🇧🇦', code:'BIH', rating:70 },
+  { name:'🇧🇬 保加利亚', flag:'🇧🇬', code:'BUL', rating:69 },
+  { name:'🇦🇱 阿尔巴尼亚', flag:'🇦🇱', code:'ALB', rating:69 },
+  { name:'🇨🇳 中国', flag:'🇨🇳', code:'CHN', rating:69 },
+  { name:'🇬🇪 格鲁吉亚', flag:'🇬🇪', code:'GEO', rating:69 },
+  { name:'🇧🇴 玻利维亚', flag:'🇧🇴', code:'BOL', rating:69 },
+  { name:'🇻🇪 委内瑞拉', flag:'🇻🇪', code:'VEN', rating:69 },
+  { name:'🇲🇪 黑山', flag:'🇲🇪', code:'MNE', rating:68 },
+  { name:'🇲🇰 北马其顿', flag:'🇲🇰', code:'MKD', rating:68 },
+  { name:'🇯🇴 约旦', flag:'🇯🇴', code:'JOR', rating:68 },
+  { name:'🇴🇲 阿曼', flag:'🇴🇲', code:'OMA', rating:68 },
+  { name:'🇭🇳 洪都拉斯', flag:'🇭🇳', code:'HON', rating:68 },
+  { name:'🇳🇿 新西兰', flag:'🇳🇿', code:'NZL', rating:68 },
+  // F: Underdogs (60-67)
+  { name:'🇸🇾 叙利亚', flag:'🇸🇾', code:'SYR', rating:66 },
+  { name:'🇧🇭 巴林', flag:'🇧🇭', code:'BHR', rating:66 },
+  { name:'🇹🇭 泰国', flag:'🇹🇭', code:'THA', rating:65 },
+  { name:'🇻🇳 越南', flag:'🇻🇳', code:'VIE', rating:65 },
+  { name:'🇸🇻 萨尔瓦多', flag:'🇸🇻', code:'SLV', rating:65 },
+  { name:'🇹🇹 特立尼达和多巴哥', flag:'🇹🇹', code:'TRI', rating:65 },
+  { name:'🇰🇵 朝鲜', flag:'🇰🇵', code:'PRK', rating:64 },
+  { name:'🇸🇧 所罗门群岛', flag:'🇸🇧', code:'SOL', rating:60 },
 ];
 
 const STAGES = [
-  '🎲 随机抽签',
-  '🏟 小组赛第1轮',
-  '🏟 小组赛第2轮',
-  '🏟 小组赛第3轮',
-  '🔥 1/16 决赛',
-  '🔥 1/8 决赛',
-  '⚡ 1/4 决赛',
-  '💥 半决赛',
-  '🥉 三四名决赛',
-  '🏆 决赛',
+  '🎲 随机抽签','🏟 小组赛第1轮','🏟 小组赛第2轮','🏟 小组赛第3轮',
+  '🔥 1/16 决赛','🔥 1/8 决赛','⚡ 1/4 决赛','💥 半决赛',
+  '🥉 三四名决赛','🏆 决赛',
 ];
 
-// Realistic score distribution (based on World Cup history)
-const SCORE_WEIGHTS = [
-  [1,0,18],[2,1,15],[0,0,12],[1,1,12],[2,0,10],[3,1,8],[3,0,6],
-  [2,2,6],[0,1,5],[1,2,4],[3,2,4],[4,1,3],[4,0,2],[4,2,2],
-  [0,2,2],[0,3,1.5],[1,3,1.5],[3,3,1.5],[4,3,1],[5,0,0.8],
-  [5,1,0.8],[5,2,0.6],[2,3,0.6],[0,4,0.4],[1,4,0.3],[5,3,0.2],
-  [6,0,0.15],[6,1,0.15],[4,4,0.1],
-];
+// ═══ Tier helper ═══
+function getTier(r) {
+  if(r>=90) return {l:'S',c:'#ffd700',bg:'rgba(255,215,0,.2)',desc:'冠军级'};
+  if(r>=85) return {l:'A',c:'#ff6b6b',bg:'rgba(255,107,107,.2)',desc:'顶级强队'};
+  if(r>=80) return {l:'B',c:'#ff9f43',bg:'rgba(255,159,67,.2)',desc:'劲旅'};
+  if(r>=76) return {l:'C',c:'#54a0ff',bg:'rgba(84,160,255,.2)',desc:'实力派'};
+  if(r>=72) return {l:'D',c:'#5f27cd',bg:'rgba(95,39,205,.2)',desc:'中坚'};
+  if(r>=68) return {l:'E',c:'#1dd1a1',bg:'rgba(29,209,161,.2)',desc:'发展中'};
+  return {l:'F',c:'#8395a7',bg:'rgba(131,149,167,.2)',desc:'挑战者'};
+}
+
+// ═══ Dynamic score weights based on rating gap ═══
+function getScoreWeights(gap) {
+  const abs = Math.abs(gap);
+  const favA = gap >= 0;
+  function f(h,a) { return favA ? [h,a] : [a,h]; }
+
+  let w;
+  if (abs <= 3) {
+    w = [[1,0,16],[0,0,14],[1,1,12],[2,1,10],[0,1,9],[2,0,8],[3,1,5],[2,2,4],[3,0,3],[0,2,3],[1,2,3],[3,2,3],[4,1,2],[4,2,1],[4,0,1],[3,3,1],[0,3,0.8],[1,3,0.8],[5,1,0.5],[5,0,0.5],[4,3,0.4]];
+  } else if (abs <= 6) {
+    w = [[2,0,15],[1,0,12],[2,1,10],[3,0,9],[3,1,8],[1,1,7],[4,1,6],[4,0,5],[0,0,4],[3,2,4],[2,2,3],[0,1,3],[5,1,3],[4,2,2],[5,0,2],[0,2,2],[1,2,2],[5,2,1],[6,1,0.8],[6,0,0.8],[4,3,0.6]];
+  } else if (abs <= 12) {
+    w = [[3,0,13],[2,0,11],[3,1,10],[4,0,9],[4,1,8],[2,1,6],[5,0,5],[5,1,5],[1,0,4],[3,2,4],[4,2,3],[1,1,3],[6,0,3],[6,1,2],[0,0,2],[5,2,2],[7,0,2],[7,1,1],[4,3,1],[0,1,0.8]];
+  } else if (abs <= 18) {
+    w = [[4,0,13],[3,0,10],[5,0,9],[4,1,8],[3,1,7],[5,1,6],[2,0,5],[6,0,5],[6,1,4],[5,2,4],[7,0,4],[4,2,3],[2,1,3],[1,0,2],[7,1,2],[8,0,2],[3,2,2],[1,1,1.5],[0,0,1],[6,2,1]];
+  } else {
+    w = [[5,0,11],[6,0,10],[4,0,9],[7,0,8],[5,1,6],[8,0,6],[3,0,5],[6,1,5],[4,1,4],[9,0,4],[7,1,4],[5,2,3],[2,0,3],[10,0,3],[8,1,2],[6,2,2],[3,1,2],[1,0,1.5],[11,0,1],[0,0,0.5]];
+  }
+  return w.map(([h,a,wt]) => [...f(h,a), wt]);
+}
 
 // ═══ State ═══
-let selectedA = 0; // index into TEAMS
-let selectedB = 1;
-let history = [];
-let openPicker = null; // 'A' | 'B' | null
+let selA=0, selB=1, history=[], openPicker=null;
 
-// ═══ DOM refs ═══
-const $ = id => document.getElementById(id);
-const flagA = $('flagA'), flagB = $('flagB');
-const inputA = $('pickerInputA'), inputB = $('pickerInputB');
-const wrapA = $('pickerWrapA'), wrapB = $('pickerWrapB');
-const listA = $('listA'), listB = $('listB');
-const searchA = $('searchA'), searchB = $('searchB');
-const scoreA = $('scoreA'), scoreB = $('scoreB');
-const stageLabel = $('stageLabel');
-const probHint = $('probHint');
-const historyPanel = $('historyPanel');
-const historyList = $('historyList');
-const toast = $('toast');
+// ═══ DOM ═══
+const $=id=>document.getElementById(id);
+const flagA=$('flagA'),flagB=$('flagB'),strengthA=$('strengthA'),strengthB=$('strengthB');
+const inputA=$('pickerInputA'),inputB=$('pickerInputB');
+const wrapA=$('pickerWrapA'),wrapB=$('pickerWrapB');
+const listA=$('listA'),listB=$('listB');
+const searchA=$('searchA'),searchB=$('searchB');
+const scoreA=$('scoreA'),scoreB=$('scoreB');
+const stageLabel=$('stageLabel'),probHint=$('probHint');
+const analysisText=$('analysisText');
+const historyPanel=$('historyPanel'),historyList=$('historyList');
+const toast=$('toast');
 
-// ═══ Initialize ═══
+// ═══ Init ═══
 function init() {
   randomTeams();
-  renderList('A', '');
-  renderList('B', '');
+  renderList('A',''); renderList('B','');
 
-  // Picker A toggle
-  inputA.addEventListener('click', () => togglePicker('A'));
-  inputA.addEventListener('focus', () => { inputA.blur(); }); // prevent keyboard on mobile
-  searchA.addEventListener('input', () => renderList('A', searchA.value));
-  searchA.addEventListener('click', e => e.stopPropagation());
+  inputA.addEventListener('click',()=>togglePicker('A'));
+  inputB.addEventListener('click',()=>togglePicker('B'));
+  searchA.addEventListener('input',()=>renderList('A',searchA.value));
+  searchB.addEventListener('input',()=>renderList('B',searchB.value));
+  searchA.addEventListener('click',e=>e.stopPropagation());
+  searchB.addEventListener('click',e=>e.stopPropagation());
 
-  // Picker B toggle
-  inputB.addEventListener('click', () => togglePicker('B'));
-  inputB.addEventListener('focus', () => { inputB.blur(); });
-  searchB.addEventListener('input', () => renderList('B', searchB.value));
-  searchB.addEventListener('click', e => e.stopPropagation());
-
-  // Close pickers on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('#pickerWrapA') && !e.target.closest('#pickerWrapB')) {
-      closeAllPickers();
-    }
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('#pickerWrapA')&&!e.target.closest('#pickerWrapB')) closeAll();
   });
 
-  // Buttons
-  $('btnRoll').addEventListener('click', roll);
-  $('btnTeams').addEventListener('click', randomTeams);
-  $('btnClear').addEventListener('click', clearHistory);
-  $('btnCopy').addEventListener('click', copyResult);
+  $('btnRoll').addEventListener('click',roll);
+  $('btnTeams').addEventListener('click',randomTeams);
+  $('btnClear').addEventListener('click',clearHistory);
+  $('btnCopy').addEventListener('click',copyResult);
+  $('btnInsight').addEventListener('click',showInsight);
 
-  // Keyboard
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.code === 'Space') {
-      if (openPicker) return; // don't roll while picking
-      e.preventDefault();
-      roll();
-    }
+  document.addEventListener('keydown',e=>{
+    if((e.key==='Enter'||e.code==='Space')&&!openPicker){e.preventDefault();roll();}
   });
+
+  updateAnalysis();
 }
 
-// ═══ Custom Picker Logic ═══
+// ═══ Picker ═══
 function togglePicker(side) {
-  const wrap = side === 'A' ? wrapA : wrapB;
-  const search = side === 'A' ? searchA : searchB;
-  const isOpen = wrap.classList.contains('open');
-
-  closeAllPickers();
-
-  if (!isOpen) {
-    wrap.classList.add('open');
-    openPicker = side;
-    renderList(side, '');
-    search.value = '';
-    setTimeout(() => search.focus(), 50);
-  }
+  const wrap=side==='A'?wrapA:wrapB;
+  const search=side==='A'?searchA:searchB;
+  const wasOpen=wrap.classList.contains('open');
+  closeAll();
+  if(!wasOpen){wrap.classList.add('open');openPicker=side;renderList(side,'');search.value='';setTimeout(()=>search.focus(),50);}
 }
 
-function closeAllPickers() {
-  wrapA.classList.remove('open');
-  wrapB.classList.remove('open');
-  openPicker = null;
-}
+function closeAll() { wrapA.classList.remove('open');wrapB.classList.remove('open');openPicker=null; }
 
-function renderList(side, filter) {
-  const list = side === 'A' ? listA : listB;
-  const q = filter.toLowerCase().trim();
-  const filtered = TEAMS
-    .map((t, i) => ({ ...t, idx: i }))
-    .filter(t => !q || t.name.toLowerCase().includes(q) || t.code.toLowerCase().includes(q));
-
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="dropdown-empty">无匹配球队</div>';
-    return;
-  }
-
-  list.innerHTML = filtered.map(t =>
-    `<div class="dropdown-item" data-idx="${t.idx}" data-side="${side}">${t.name}</div>`
-  ).join('');
-
-  // Click handlers on items
-  list.querySelectorAll('.dropdown-item').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const idx = parseInt(el.dataset.idx);
-      selectTeam(side, idx);
-    });
+function renderList(side,filter) {
+  const list=side==='A'?listA:listB;
+  const q=filter.toLowerCase().trim();
+  const filtered=TEAMS.map((t,i)=>({...t,idx:i})).filter(t=>!q||t.name.toLowerCase().includes(q)||t.code.toLowerCase().includes(q));
+  if(!filtered.length) { list.innerHTML='<div class="dropdown-empty">无匹配球队</div>';return; }
+  list.innerHTML=filtered.map(t=>{
+    const tier=getTier(t.rating);
+    return `<div class="dropdown-item" data-idx="${t.idx}" data-side="${side}"><span class="tier-dot" style="background:${tier.c}"></span>${t.name} <span style="color:${tier.c};font-size:.7em;margin-left:auto">${t.rating}</span></div>`;
+  }).join('');
+  list.querySelectorAll('.dropdown-item').forEach(el=>{
+    el.addEventListener('click',e=>{e.stopPropagation();selectTeam(side,parseInt(el.dataset.idx));});
   });
 }
 
-function selectTeam(side, idx) {
-  if (side === 'A') {
-    selectedA = idx;
-    inputA.value = TEAMS[idx].name;
-    flagA.textContent = TEAMS[idx].flag;
-  } else {
-    selectedB = idx;
-    inputB.value = TEAMS[idx].name;
-    flagB.textContent = TEAMS[idx].flag;
-  }
-  closeAllPickers();
+function selectTeam(side,idx) {
+  if(side==='A'){selA=idx;}else{selB=idx;}
+  const t=TEAMS[idx], tier=getTier(t.rating);
+  const input=side==='A'?inputA:inputB;
+  const flag=side==='A'?flagA:flagB;
+  const str=side==='A'?strengthA:strengthB;
+  input.value=t.name; flag.textContent=t.flag;
+  str.textContent=tier.l; str.style.background=tier.bg; str.style.color=tier.c;
+  closeAll(); updateAnalysis();
 }
 
-// ═══ Random Teams ═══
 function randomTeams() {
-  let i, j;
-  do {
-    i = Math.floor(Math.random() * TEAMS.length);
-    j = Math.floor(Math.random() * TEAMS.length);
-  } while (i === j);
-  selectTeam('A', i);
-  selectTeam('B', j);
+  let i,j; do { i=Math.floor(Math.random()*TEAMS.length); j=Math.floor(Math.random()*TEAMS.length); } while(i===j);
+  selectTeam('A',i); selectTeam('B',j);
 }
+
+// ═══ Analysis ═══
+function updateAnalysis() {
+  const a=TEAMS[selA], b=TEAMS[selB];
+  const gap=a.rating-b.rating;
+  const tierA=getTier(a.rating), tierB=getTier(b.rating);
+  const abs=Math.abs(gap);
+  let emoji,label,bg;
+  if(abs<=3)      {emoji='⚔️';label='势均力敌，胜负难料';bg='rgba(255,255,255,.06)';}
+  else if(abs<=6) {emoji='🤏';label=(gap>0?a.code:b.code)+' 略占上风';bg='rgba(255,255,255,.06)';}
+  else if(abs<=12){emoji='📈';label=(gap>0?a.code:b.code)+' 明显占优';bg='rgba(255,180,0,.08)';}
+  else if(abs<=18){emoji='🔥';label=(gap>0?a.code:b.code)+' 实力碾压';bg='rgba(255,107,107,.08)';}
+  else            {emoji='💀';label=(gap>0?a.code:b.code)+' 降维打击';bg='rgba(255,50,50,.1)';}
+  analysisText.innerHTML=`<span style="background:${bg};color:#fff">${emoji} ${label}  |  ${tierA.desc} vs ${tierB.desc}</span>`;
+}
+
+function showInsight() {
+  const a=TEAMS[selA], b=TEAMS[selB];
+  const gap=a.rating-b.rating;
+  const abs=Math.abs(gap);
+  const tierA=getTier(a.rating), tierB=getTier(b.rating);
+
+  $('insightNameA').textContent=a.flag+' '+a.code;
+  $('insightRatingA').textContent='⭐ '+a.rating+' / '+tierA.desc;
+  $('insightNameB').textContent=b.flag+' '+b.code;
+  $('insightRatingB').textContent='⭐ '+b.rating+' / '+tierB.desc;
+
+  $('insightBarA').style.width=(a.rating)+'%';
+  $('insightBarA').style.background=tierA.c;
+  $('insightBarB').style.width=(b.rating)+'%';
+  $('insightBarB').style.background=tierB.c;
+
+  $('insightGap').textContent=abs+' 分';
+  $('insightGap').style.color=abs<=6?'#54a0ff':abs<=12?'#ff9f43':'#ff6b6b';
+
+  let expect;
+  if(abs<=3) expect='任何结果都有可能';
+  else if(abs<=6) expect='强方胜率约 55-60%';
+  else if(abs<=12) expect='强方胜率约 65-75%';
+  else if(abs<=18) expect='强方胜率约 78-88%';
+  else expect='强方胜率 > 90%';
+  $('insightExpect').textContent=expect;
+
+  $('insightPop').classList.add('show');
+}
+
+function closeInsight() { $('insightPop').classList.remove('show'); }
+$('insightPop').addEventListener('click',function(e) { if(e.target===this) closeInsight(); });
 
 // ═══ Score Roll ═══
-function randomScore() {
-  const total = SCORE_WEIGHTS.reduce((s, x) => s + x[2], 0);
-  let r = Math.random() * total;
-  for (const [h, a, w] of SCORE_WEIGHTS) {
-    r -= w;
-    if (r <= 0) return [h, a];
-  }
-  return [1, 0];
+function randomScore(gap) {
+  const weights=getScoreWeights(gap);
+  const total=weights.reduce((s,x)=>s+x[2],0);
+  let r=Math.random()*total;
+  for(const [h,a,wt] of weights) { r-=wt; if(r<=0) return[h,a]; }
+  return[1,0];
 }
 
 function roll() {
-  const teamA = TEAMS[selectedA];
-  const teamB = TEAMS[selectedB];
-  const stage = STAGES[Math.floor(Math.random() * STAGES.length)];
-  stageLabel.textContent = stage;
+  const teamA=TEAMS[selA], teamB=TEAMS[selB];
+  const gap=teamA.rating-teamB.rating;
+  const stage=STAGES[Math.floor(Math.random()*STAGES.length)];
+  stageLabel.textContent=stage;
 
-  // Disable
-  const btns = document.querySelectorAll('button');
-  btns.forEach(b => b.disabled = true);
+  const btns=document.querySelectorAll('button');
+  btns.forEach(b=>b.disabled=true);
 
-  scoreA.classList.add('rolling');
-  scoreB.classList.add('rolling');
+  scoreA.classList.add('rolling'); scoreB.classList.add('rolling');
 
-  let ticks = 0;
-  const totalTicks = 18;
-
-  const interval = setInterval(() => {
-    scoreA.textContent = Math.floor(Math.random() * 7);
-    scoreB.textContent = Math.floor(Math.random() * 7);
+  let ticks=0;
+  const interval=setInterval(()=>{
+    scoreA.textContent=Math.floor(Math.random()*7);
+    scoreB.textContent=Math.floor(Math.random()*7);
     ticks++;
-
-    if (ticks >= totalTicks) {
+    if(ticks>=18){
       clearInterval(interval);
-
-      const [h, a] = randomScore();
-      scoreA.textContent = h;
-      scoreB.textContent = a;
-      scoreA.classList.remove('rolling');
-      scoreB.classList.remove('rolling');
-
-      // Flash
-      scoreA.style.color = '#ffd700';
-      scoreB.style.color = '#ffd700';
-      setTimeout(() => {
-        scoreA.style.color = '#fff';
-        scoreB.style.color = '#fff';
-      }, 300);
-
-      btns.forEach(b => b.disabled = false);
-
-      // History
-      addHistory(teamA, teamB, h, a, stage);
-
-      // Hint
-      const diff = Math.abs(h - a);
-      let desc;
-      if (h === a) desc = '平局！势均力敌 ⚖️';
-      else if (diff === 1) desc = '一球小胜，激烈胶着 🔥';
-      else if (diff === 2) desc = '两球优势，稳扎稳打 💪';
-      else if (diff === 3) desc = '大比分领先 ⚡';
-      else desc = '屠杀局 💀';
-      probHint.textContent = `${teamA.code} ${h}-${a} ${teamB.code}  |  ${desc}`;
+      const [h,a]=randomScore(gap);
+      scoreA.textContent=h; scoreB.textContent=a;
+      scoreA.classList.remove('rolling'); scoreB.classList.remove('rolling');
+      scoreA.style.color='#ffd700'; scoreB.style.color='#ffd700';
+      setTimeout(()=>{scoreA.style.color='#fff';scoreB.style.color='#fff';},300);
+      btns.forEach(b=>b.disabled=false);
+      addHistory(teamA,teamB,h,a,gap,stage);
+      updateHint(teamA,teamB,h,a,gap);
     }
-  }, 80);
+  },80);
+}
+
+function updateHint(teamA,teamB,h,a,gap) {
+  const abs=Math.abs(gap);
+  const winner=h>a?teamA:h<a?teamB:null;
+  const diff=Math.abs(h-a);
+  let desc='',emoji='';
+
+  if(winner===null){desc='平局！';emoji='⚖️';}
+  else if(gap>0&&winner===teamA){desc='强队取胜';emoji=abs>12?'✅':'👌';}
+  else if(gap<0&&winner===teamB){desc='强队取胜';emoji=abs>12?'✅':'👌';}
+  else if(gap>0&&winner===teamB){desc='爆冷！';emoji='💥';}
+  else if(gap<0&&winner===teamA){desc='爆冷！';emoji='💥';}
+
+  if(diff>=4) desc+=' 大比分！';
+  probHint.textContent=`${teamA.code} ${h}-${a} ${teamB.code}  |  ${emoji} ${desc}`;
 }
 
 // ═══ History ═══
-function addHistory(teamA, teamB, h, a, stage) {
-  const time = new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-  history.unshift({ teamA, teamB, h, a, stage, time });
-  if (history.length > 50) history.pop();
+function addHistory(teamA,teamB,h,a,gap,stage) {
+  const time=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  history.unshift({teamA,teamB,h,a,gap,stage,time});
+  if(history.length>50) history.pop();
   renderHistory();
 }
 
 function renderHistory() {
-  if (history.length === 0) {
-    historyPanel.style.display = 'none';
-    return;
-  }
-  historyPanel.style.display = 'block';
-  historyList.innerHTML = history.map(x => `
+  if(!history.length){historyPanel.style.display='none';return;}
+  historyPanel.style.display='block';
+  historyList.innerHTML=history.map(x=>`
     <div class="history-item">
       <span class="teams">${x.teamA.flag} ${x.teamA.code} vs ${x.teamB.flag} ${x.teamB.code}</span>
-      <span class="score">${x.h} : ${x.a}</span>
+      <span class="score">${x.h}:${x.a}</span>
       <span class="time">${x.time}</span>
     </div>
   `).join('');
 }
 
-function clearHistory() {
-  history = [];
-  renderHistory();
-  probHint.textContent = '点击按钮随机生成比分 · 概率模拟真实比赛';
-}
+function clearHistory() { history=[]; renderHistory(); probHint.textContent='点击按钮随机生成比分 · 实力差距影响结果概率'; }
 
 // ═══ Copy ═══
 function copyResult() {
-  const h = scoreA.textContent;
-  const a = scoreB.textContent;
-  if (h === '-' || a === '-') {
-    showToast('⚠️ 请先抽取比分');
-    return;
-  }
-  const teamA = TEAMS[selectedA];
-  const teamB = TEAMS[selectedB];
-  const text = `⚽ 2026世界杯比分抽取\n\n${teamA.flag} ${teamA.name}  ${h} : ${a}  ${teamB.name} ${teamB.flag}\n\n${stageLabel.textContent}\n\n🎰 仅供娱乐`;
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text).then(() => showToast('✅ 已复制，去粘贴吧！'));
+  const h=scoreA.textContent, a=scoreB.textContent;
+  if(h==='-'||a==='-'){showToast('⚠️ 请先抽取比分');return;}
+  const teamA=TEAMS[selA], teamB=TEAMS[selB];
+  const gap=Math.abs(teamA.rating-teamB.rating);
+  const text=`⚽ 2026世界杯比分\n\n${teamA.flag} ${teamA.name} (${teamA.rating})  ${h} : ${a}  (${teamB.rating}) ${teamB.name} ${teamB.flag}\n\n${stageLabel.textContent}\n实力差: ${gap}分 | 🎰 仅供娱乐`;
+  if(navigator.clipboard&&navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(()=>showToast('✅ 已复制！'));
   } else {
-    // Fallback
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('✅ 已复制，去粘贴吧！');
+    const ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);
+    showToast('✅ 已复制！');
   }
 }
 
-function showToast(msg) {
-  toast.textContent = msg;
-  toast.classList.add('show');
-  clearTimeout(toast._t);
-  toast._t = setTimeout(() => toast.classList.remove('show'), 1800);
-}
+function showToast(msg) { toast.textContent=msg;toast.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove('show'),1800); }
 
-// ═══ Start ═══
 init();
 </script>
 </body>
