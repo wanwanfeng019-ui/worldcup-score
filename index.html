@@ -127,7 +127,48 @@ body::before{
 .insight-val{color:#fff;font-weight:700;font-size:.85em}
 .insight-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.1);margin:8px 0;overflow:hidden}
 .insight-bar-fill{height:100%;border-radius:3px;transition:width .5s}
-.insight-close{margin-top:16px;padding:10px 30px;border-radius:12px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-weight:700;cursor:pointer;font-size:.85em}
+.insight-close:active{background:rgba(255,255,255,.15)}
+
+/* ── Spin Wheel ── */
+.wheel-card{
+  background:linear-gradient(180deg,rgba(25,60,25,.6),rgba(20,45,20,.3));
+  border:2px solid #d4a574;border-radius:24px;padding:22px 16px;
+  box-shadow:0 30px 60px rgba(0,0,0,.5),inset 0 0 80px rgba(0,0,0,.2),0 0 0 8px rgba(139,90,43,.3);
+  margin-top:16px;text-align:center;position:relative;
+}
+.wheel-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:22px;
+  background:radial-gradient(ellipse at 50% 0%,rgba(255,255,255,.03),transparent 60%);
+  pointer-events:none;z-index:0;
+}
+.wheel-card h2{color:#ffd700;font-size:.95em;letter-spacing:3px;margin-bottom:14px;position:relative;z-index:1;text-shadow:0 2px 8px rgba(0,0,0,.5)}
+.wheel-wrap{position:relative;width:260px;height:260px;margin:0 auto;z-index:1}
+.wheel-wrap canvas{width:100%;height:100%}
+.wheel-pointer{
+  position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;
+  border-top:28px solid #ffd700;filter:drop-shadow(0 3px 6px rgba(0,0,0,.5));z-index:2;
+}
+.wheel-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#ffd700,#ffaa00);
+  display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.8em;color:#1a1a1a;
+  box-shadow:0 4px 15px rgba(0,0,0,.5);z-index:3;
+}
+.wheel-result{margin-top:14px;min-height:2em}
+.wheel-result span{font-size:.85em;color:#ccc}
+.wheel-result .result-val{color:#ffd700;font-weight:900;font-size:1.2em;animation:popIn .4s}
+@keyframes popIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.3)}100%{transform:scale(1);opacity:1}}
+.wheel-actions{margin-top:10px;display:flex;gap:8px;justify-content:center}
+.wheel-actions .btn-spin{
+  background:linear-gradient(135deg,#ff6b6b,#ee5a24);color:#fff;
+  padding:12px 40px;border-radius:14px;border:none;font-size:1em;font-weight:700;cursor:pointer;
+  box-shadow:0 6px 20px rgba(255,107,107,.3);transition:all .25s;letter-spacing:2px;outline:none;
+}
+.wheel-actions .btn-spin:active{transform:scale(.96);box-shadow:0 3px 10px rgba(255,107,107,.5)}
+.wheel-actions .btn-spin:disabled{opacity:.5;pointer-events:none}
+.wheel-history{max-height:120px;overflow-y:auto;margin-top:10px;text-align:left}
+.wheel-history-item{display:inline-block;padding:4px 10px;margin:2px 4px;background:rgba(255,255,255,.05);border-radius:8px;font-size:.7em;color:#aaa}
 
 @media(max-width:380px){
   .header h1{font-size:1.2em}
@@ -201,11 +242,26 @@ body::before{
     <div class="prob-hint" id="probHint">点击按钮随机生成比分 · 实力差距影响结果概率</div>
   </div>
 
+  <!-- 🀄 Mahjong Wheel -->
+  <div class="wheel-card">
+    <h2>🀄 麻将番型转盘</h2>
+    <div class="wheel-wrap">
+      <canvas id="wheelCanvas" width="520" height="520"></canvas>
+      <div class="wheel-pointer"></div>
+      <div class="wheel-center">🀄</div>
+    </div>
+    <div class="wheel-result" id="wheelResult"><span>👆 点击下方按钮转动转盘</span></div>
+    <div class="wheel-actions">
+      <button class="btn-spin" id="btnSpin">🎲 转动转盘</button>
+    </div>
+    <div class="wheel-history" id="wheelHistory"></div>
+  </div>
+
   <div class="history" id="historyPanel" style="display:none">
     <h3>📋 抽取记录</h3>
     <div class="history-list" id="historyList"></div>
   </div>
-  <div class="footer">⚽ 2026 FIFA World Cup · 89支球队 · 实力分级 · 仅供娱乐 ⚽</div>
+  <div class="footer">⚽ 2026 FIFA World Cup · 🀄 麻将番型 · 仅供娱乐 ⚽</div>
 </div>
 
 <!-- Insight modal -->
@@ -593,6 +649,164 @@ function copyResult() {
 }
 
 function showToast(msg) { toast.textContent=msg;toast.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>toast.classList.remove('show'),1800); }
+
+// ═══════════════════════════════
+// 🀄 Mahjong Spinning Wheel
+// ═══════════════════════════════
+const WHEEL_ITEMS = [
+  { name:'素扣', icon:'🀫', color:'#e74c3c', desc:'平扣，最基础的胡牌' },
+  { name:'普通清一色', icon:'🀐', color:'#e67e22', desc:'同一种花色成牌' },
+  { name:'大单吊', icon:'🀙', color:'#f1c40f', desc:'单吊将牌，紧张刺激' },
+  { name:'杠上花', icon:'🌸', color:'#2ecc71', desc:'杠后摸牌自摸胡' },
+  { name:'杠上炮', icon:'💥', color:'#1abc9c', desc:'杠后放炮，乐极生悲' },
+  { name:'幺九', icon:'🀇', color:'#3498db', desc:'全是一和九的牌' },
+  { name:'将对', icon:'🀄', color:'#9b59b6', desc:'全是2/5/8将牌' },
+  { name:'龙七对', icon:'🐉', color:'#e056a0', desc:'七对之中有四张一样的' },
+  { name:'花猪', icon:'🐷', color:'#ff7979', desc:'三种花色都有的尴尬' },
+  { name:'清一色带三杠', icon:'👑', color:'#c0392b', desc:'终极豪华大番型' },
+];
+
+const N = WHEEL_ITEMS.length;
+const ARC = (2 * Math.PI) / N;
+
+const wheelCanvas = document.getElementById('wheelCanvas');
+const wheelCtx = wheelCanvas.getContext('2d');
+const wheelResult = document.getElementById('wheelResult');
+const wheelHistory = document.getElementById('wheelHistory');
+const btnSpin = document.getElementById('btnSpin');
+
+let wheelAngle = 0;          // current rotation
+let wheelSpinning = false;
+let wheelResults = [];
+
+// Draw Mahjong-themed wheel
+function drawWheel() {
+  const cx = 260, cy = 260, r = 240;
+  wheelCtx.clearRect(0, 0, 520, 520);
+
+  // Outer ring — mahjong table green
+  wheelCtx.save();
+  wheelCtx.beginPath();
+  wheelCtx.arc(cx, cy, r + 12, 0, Math.PI * 2);
+  wheelCtx.fillStyle = '#1a3a1a';
+  wheelCtx.fill();
+  wheelCtx.strokeStyle = '#d4a574';
+  wheelCtx.lineWidth = 4;
+  wheelCtx.stroke();
+  wheelCtx.restore();
+
+  // Segments
+  for (let i = 0; i < N; i++) {
+    const startAngle = wheelAngle + i * ARC - ARC / 2;
+    const endAngle = startAngle + ARC;
+
+    // Segment fill
+    wheelCtx.beginPath();
+    wheelCtx.moveTo(cx, cy);
+    wheelCtx.arc(cx, cy, r, startAngle, endAngle);
+    wheelCtx.closePath();
+    wheelCtx.fillStyle = WHEEL_ITEMS[i].color;
+    wheelCtx.fill();
+
+    // Segment border
+    wheelCtx.strokeStyle = 'rgba(255,255,255,.3)';
+    wheelCtx.lineWidth = 2;
+    wheelCtx.stroke();
+
+    // Text
+    wheelCtx.save();
+    wheelCtx.translate(cx, cy);
+    wheelCtx.rotate(startAngle + ARC / 2);
+    wheelCtx.textAlign = 'center';
+    wheelCtx.fillStyle = '#fff';
+    wheelCtx.font = 'bold 17px "PingFang SC","Microsoft YaHei",sans-serif';
+    wheelCtx.shadowColor = 'rgba(0,0,0,.5)';
+    wheelCtx.shadowBlur = 4;
+    wheelCtx.fillText(WHEEL_ITEMS[i].name, r * 0.72, 6);
+    // Icon
+    wheelCtx.font = '20px sans-serif';
+    wheelCtx.fillText(WHEEL_ITEMS[i].icon, r * 0.72, -16);
+    wheelCtx.restore();
+  }
+
+  // Inner decorative ring
+  wheelCtx.beginPath();
+  wheelCtx.arc(cx, cy, r * 0.35, 0, Math.PI * 2);
+  wheelCtx.fillStyle = '#2d5a2d';
+  wheelCtx.fill();
+  wheelCtx.strokeStyle = '#d4a574';
+  wheelCtx.lineWidth = 3;
+  wheelCtx.stroke();
+
+  // Tick marks on outer ring
+  for (let i = 0; i < N; i++) {
+    const a = wheelAngle + i * ARC - ARC / 2;
+    wheelCtx.beginPath();
+    wheelCtx.moveTo(cx + Math.cos(a) * (r - 4), cy + Math.sin(a) * (r - 4));
+    wheelCtx.lineTo(cx + Math.cos(a) * (r + 4), cy + Math.sin(a) * (r + 4));
+    wheelCtx.strokeStyle = '#fff';
+    wheelCtx.lineWidth = 2;
+    wheelCtx.stroke();
+  }
+}
+
+// Spin the wheel
+function spinWheel() {
+  if (wheelSpinning) return;
+  wheelSpinning = true;
+  btnSpin.disabled = true;
+  wheelResult.innerHTML = '<span>转动中…</span>';
+
+  // Random target: pick an item
+  const targetIdx = Math.floor(Math.random() * N);
+
+  // Calculate target angle so pointer (top = -PI/2) aligns with segment center
+  const segCenter = -Math.PI / 2 - (targetIdx * ARC);
+  // Add several full rotations + randomness within segment
+  const fullSpins = (4 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+  const targetAngle = fullSpins + segCenter + (Math.random() - 0.5) * ARC * 0.6;
+
+  const startAngle = wheelAngle;
+  const duration = 4000; // ms
+  const startTime = performance.now();
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    wheelAngle = startAngle + targetAngle * eased;
+    drawWheel();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      // Done
+      wheelAngle = startAngle + targetAngle;
+      drawWheel();
+      wheelSpinning = false;
+      btnSpin.disabled = false;
+
+      const item = WHEEL_ITEMS[targetIdx];
+      wheelResult.innerHTML = `<span style="color:${item.color};font-weight:900;font-size:1.3em" class="result-val">${item.icon} ${item.name}</span><br><span style="font-size:.75em;color:#888">${item.desc}</span>`;
+      wheelResults.unshift({ name: item.name, icon: item.icon, color: item.color, time: new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' }) });
+      if (wheelResults.length > 20) wheelResults.pop();
+      renderWheelHistory();
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function renderWheelHistory() {
+  wheelHistory.innerHTML = wheelResults.map(r =>
+    `<span class="wheel-history-item" style="color:${r.color}">${r.icon} ${r.name}</span>`
+  ).join('');
+}
+
+// Init wheel
+drawWheel();
+btnSpin.addEventListener('click', spinWheel);
 
 init();
 </script>
