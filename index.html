@@ -170,6 +170,34 @@ body::before{
 .wheel-history{max-height:120px;overflow-y:auto;margin-top:10px;text-align:left}
 .wheel-history-item{display:inline-block;padding:4px 10px;margin:2px 4px;background:rgba(255,255,255,.05);border-radius:8px;font-size:.7em;color:#aaa}
 
+/* ── Results Card ── */
+.results-card{
+  background:linear-gradient(145deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:0;margin-top:16px;
+  backdrop-filter:blur(20px);overflow:hidden;
+}
+.results-header{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:14px 18px;cursor:pointer;transition:background .2s;
+}
+.results-header:hover{background:rgba(255,255,255,.03)}
+.results-header h2{color:#ffd700;font-size:.9em;letter-spacing:2px;margin:0}
+.results-arrow{color:#8a9bb5;font-size:.8em;transition:transform .3s}
+.results-card.open .results-arrow{transform:rotate(180deg)}
+.results-body{max-height:0;overflow:hidden;transition:max-height .4s;padding:0 18px}
+.results-card.open .results-body{max-height:800px;padding:0 18px 14px}
+.results-date{color:#ffd700;font-size:.75em;font-weight:700;margin:10px 0 6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.06)}
+.results-date:first-child{border-top:none;margin-top:0}
+.result-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:6px 10px;margin:2px 0;background:rgba(255,255,255,.02);border-radius:8px;
+  font-size:.75em;color:#ccc;gap:6px;
+}
+.result-row .r-team{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.result-row .r-team:first-child{text-align:right}
+.result-row .r-score{font-weight:900;color:#ffd700;font-size:1.05em;min-width:42px;text-align:center;flex-shrink:0}
+.result-row .r-note{color:#5a6b85;font-size:.85em;min-width:55px;text-align:right;flex-shrink:0}
+
 @media(max-width:380px){
   .header h1{font-size:1.2em}
   .team-slot .flag{font-size:34px}
@@ -240,6 +268,41 @@ body::before{
       <button class="btn-copy" id="btnCopy">📋 复制结果</button>
     </div>
     <div class="prob-hint" id="probHint">点击按钮随机生成比分 · 实力差距影响结果概率</div>
+  </div>
+
+  <!-- 🏟 本届赛果 -->
+  <div class="results-card" id="resultsCard">
+    <div class="results-header" id="resultsToggle">
+      <h2>🏟 本届世界杯赛果 <span style="font-size:.7em;color:#6a7d95">（实时更新）</span></h2>
+      <span class="results-arrow" id="resultsArrow">▼</span>
+    </div>
+    <div class="results-body" id="resultsBody">
+      <div class="results-date">📅 6月16日（今日）</div>
+      <div class="result-row"><span class="r-team">🇧🇪 比利时</span><span class="r-score">1 : 1</span><span class="r-team">🇪🇬 埃及</span><span class="r-note">Group G</span></div>
+      <div class="result-row"><span class="r-team">🇸🇦 沙特阿拉伯</span><span class="r-score">1 : 1</span><span class="r-team">🇺🇾 乌拉圭</span><span class="r-note">Group H</span></div>
+      <div class="result-row"><span class="r-team">🇮🇷 伊朗</span><span class="r-score">2 : 2</span><span class="r-team">🇳🇿 新西兰</span><span class="r-note">Group G</span></div>
+
+      <div class="results-date">📅 6月15日</div>
+      <div class="result-row"><span class="r-team">🇪🇸 西班牙</span><span class="r-score">0 : 0</span><span class="r-team">🇨🇻 佛得角</span><span class="r-note">Group H</span></div>
+
+      <div class="results-date">📅 6月14日</div>
+      <div class="result-row"><span class="r-team">🇩🇪 德国</span><span class="r-score">7 : 1</span><span class="r-team">🇨🇼 库拉索</span><span class="r-note">Group F</span></div>
+      <div class="result-row"><span class="r-team">🇳🇱 荷兰</span><span class="r-score">2 : 2</span><span class="r-team">🇯🇵 日本</span><span class="r-note">Group F  — 鎌田大地89分钟绝平</span></div>
+      <div class="result-row"><span class="r-team">🇨🇮 科特迪瓦</span><span class="r-score">1 : 0</span><span class="r-team">🇪🇨 厄瓜多尔</span><span class="r-note">Group F</span></div>
+      <div class="result-row"><span class="r-team">🇸🇪 瑞典</span><span class="r-score">5 : 1</span><span class="r-team">🇹🇳 突尼斯</span><span class="r-note">Group F</span></div>
+
+      <div class="results-date">📅 6月13日</div>
+      <div class="result-row"><span class="r-team">🇶🇦 卡塔尔</span><span class="r-score">1 : 1</span><span class="r-team">🇨🇭 瑞士</span><span class="r-note">Group B  — 胡赫90+4'绝平</span></div>
+      <div class="result-row"><span class="r-team">🇨🇦 加拿大</span><span class="r-score">1 : 1</span><span class="r-team">🇧🇦 波黑</span><span class="r-note">Group B</span></div>
+      <div class="result-row"><span class="r-team">🇲🇽 墨西哥</span><span class="r-score">2 : 0</span><span class="r-team">🇿🇦 南非</span><span class="r-note">Group ?</span></div>
+      <div class="result-row"><span class="r-team">🇰🇷 韩国</span><span class="r-score">2 : 1</span><span class="r-team">🇨🇿 捷克</span><span class="r-note">Group ?</span></div>
+
+      <div class="results-date">📅 6月12日</div>
+      <div class="result-row"><span class="r-team">🇺🇸 美国</span><span class="r-score">4 : 1</span><span class="r-team">🇵🇾 巴拉圭</span><span class="r-note">Group ?  — 揭幕战</span></div>
+      <div class="result-row"><span class="r-team">🇧🇷 巴西</span><span class="r-score">1 : 1</span><span class="r-team">🇲🇦 摩洛哥</span><span class="r-note">Group ?</span></div>
+      <div class="result-row"><span class="r-team">🇭🇹 海地</span><span class="r-score">0 : 1</span><span class="r-team">🏴󠁧󠁢󠁳󠁣󠁴󠁿 苏格兰</span><span class="r-note">Group ?</span></div>
+      <div class="result-row"><span class="r-team">🇦🇺 澳大利亚</span><span class="r-score">2 : 0</span><span class="r-team">🇹🇷 土耳其</span><span class="r-note">Group ?</span></div>
+    </div>
   </div>
 
   <!-- 🀄 Mahjong Wheel -->
@@ -807,6 +870,11 @@ function renderWheelHistory() {
 // Init wheel
 drawWheel();
 btnSpin.addEventListener('click', spinWheel);
+
+// Results toggle
+document.getElementById('resultsToggle').addEventListener('click', function() {
+  document.getElementById('resultsCard').classList.toggle('open');
+});
 
 init();
 </script>
