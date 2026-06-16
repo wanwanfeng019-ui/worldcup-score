@@ -196,6 +196,9 @@ body::before{
 .wheel-actions .btn-spin:disabled{opacity:.5;pointer-events:none}
 .wheel-history{max-height:120px;overflow-y:auto;margin-top:10px;text-align:left}
 .wheel-history-item{display:inline-block;padding:4px 10px;margin:2px 4px;background:rgba(255,255,255,.05);border-radius:8px;font-size:.7em;color:#aaa}
+.wheel-datetime{font-size:.85em;color:#ffd700;font-weight:700;letter-spacing:2px;margin-bottom:4px;text-align:center}
+.wheel-card2{border-color:#c0392b;box-shadow:0 30px 60px rgba(0,0,0,.5),inset 0 0 80px rgba(0,0,0,.2),0 0 0 8px rgba(192,57,43,.3)}
+.wheel-card2 .btn-spin{background:linear-gradient(135deg,#c0392b,#e74c3c);box-shadow:0 6px 20px rgba(192,57,43,.3)}
 
 /* ── Results Card ── */
 .results-card{
@@ -354,6 +357,22 @@ body::before{
       <button class="btn-spin" id="btnSpin">🎲 转动转盘</button>
     </div>
     <div class="wheel-history" id="wheelHistory"></div>
+  </div>
+
+  <!-- 🎯 姓氏轮盘 -->
+  <div class="wheel-card wheel-card2">
+    <div class="wheel-datetime" id="surnameDatetime"></div>
+    <h2>🎯 随机抽取</h2>
+    <div class="wheel-wrap">
+      <canvas id="surnameCanvas" width="520" height="520"></canvas>
+      <div class="wheel-pointer"></div>
+      <div class="wheel-center">🎯</div>
+    </div>
+    <div class="wheel-result" id="surnameResult"><span>👆 点击下方按钮转动转盘</span></div>
+    <div class="wheel-actions">
+      <button class="btn-spin" id="btnSurnameSpin">🎲 转动转盘</button>
+    </div>
+    <div class="wheel-history" id="surnameHistory"></div>
   </div>
 
   <div class="history" id="historyPanel" style="display:none">
@@ -936,6 +955,146 @@ btnSpin.addEventListener('click', spinWheel);
 document.getElementById('resultsToggle').addEventListener('click', function() {
   document.getElementById('resultsCard').classList.toggle('open');
 });
+
+// ═══════════════════════════════
+// 🎯 Surname Spinning Wheel
+// ═══════════════════════════════
+const SURNAMES = [
+  { name:'郑', color:'#e74c3c', bg:'#ffeaa7' },
+  { name:'田', color:'#e67e22', bg:'#fdcb6e' },
+  { name:'叶', color:'#27ae60', bg:'#55efc4' },
+  { name:'刘', color:'#2980b9', bg:'#74b9ff' },
+  { name:'房', color:'#8e44ad', bg:'#a29bfe' },
+];
+
+const SN = SURNAMES.length;
+const SARC = (2 * Math.PI) / SN;
+
+const surnameCanvas = document.getElementById('surnameCanvas');
+const surnameCtx = surnameCanvas.getContext('2d');
+const surnameResult = document.getElementById('surnameResult');
+const surnameHistory = document.getElementById('surnameHistory');
+const btnSurnameSpin = document.getElementById('btnSurnameSpin');
+const surnameDatetime = document.getElementById('surnameDatetime');
+
+let surnameAngle = 0;
+let surnameSpinning = false;
+let surnameResults = [];
+
+// Update datetime
+function updateDatetime() {
+  const now = new Date();
+  const str = now.getFullYear() + '-' +
+    String(now.getMonth()+1).padStart(2,'0') + '-' +
+    String(now.getDate()).padStart(2,'0') + ' ' +
+    String(now.getHours()).padStart(2,'0') + ':' +
+    String(now.getMinutes()).padStart(2,'0') + ':' +
+    String(now.getSeconds()).padStart(2,'0');
+  surnameDatetime.textContent = '🕐 ' + str;
+}
+updateDatetime();
+setInterval(updateDatetime, 1000);
+
+function drawSurnameWheel() {
+  const cx = 260, cy = 260, r = 240;
+  surnameCtx.clearRect(0, 0, 520, 520);
+
+  // Outer ring
+  surnameCtx.beginPath();
+  surnameCtx.arc(cx, cy, r + 12, 0, Math.PI * 2);
+  surnameCtx.fillStyle = '#1a1a2e';
+  surnameCtx.fill();
+  surnameCtx.strokeStyle = '#e74c3c';
+  surnameCtx.lineWidth = 4;
+  surnameCtx.stroke();
+
+  // Segments
+  for (let i = 0; i < SN; i++) {
+    const startAngle = surnameAngle + i * SARC - SARC / 2;
+    const endAngle = startAngle + SARC;
+
+    surnameCtx.beginPath();
+    surnameCtx.moveTo(cx, cy);
+    surnameCtx.arc(cx, cy, r, startAngle, endAngle);
+    surnameCtx.closePath();
+    surnameCtx.fillStyle = SURNAMES[i].color;
+    surnameCtx.fill();
+    surnameCtx.strokeStyle = 'rgba(255,255,255,.3)';
+    surnameCtx.lineWidth = 2;
+    surnameCtx.stroke();
+
+    // Surname text - large
+    surnameCtx.save();
+    surnameCtx.translate(cx, cy);
+    surnameCtx.rotate(startAngle + SARC / 2);
+    surnameCtx.textAlign = 'center';
+    surnameCtx.fillStyle = '#fff';
+    surnameCtx.font = 'bold 48px "PingFang SC","Microsoft YaHei",sans-serif';
+    surnameCtx.shadowColor = 'rgba(0,0,0,.6)';
+    surnameCtx.shadowBlur = 6;
+    surnameCtx.fillText(SURNAMES[i].name, r * 0.65, 16);
+    surnameCtx.restore();
+  }
+
+  // Inner ring
+  surnameCtx.beginPath();
+  surnameCtx.arc(cx, cy, r * 0.3, 0, Math.PI * 2);
+  surnameCtx.fillStyle = '#16213e';
+  surnameCtx.fill();
+  surnameCtx.strokeStyle = '#e74c3c';
+  surnameCtx.lineWidth = 3;
+  surnameCtx.stroke();
+}
+
+function spinSurnameWheel() {
+  if (surnameSpinning) return;
+  surnameSpinning = true;
+  btnSurnameSpin.disabled = true;
+  surnameResult.innerHTML = '<span>转动中…</span>';
+
+  const targetIdx = Math.floor(Math.random() * SN);
+  const segCenter = -Math.PI / 2 - (targetIdx * SARC);
+  const fullSpins = (4 + Math.floor(Math.random() * 4)) * Math.PI * 2;
+  const targetAngle = fullSpins + segCenter + (Math.random() - 0.5) * SARC * 0.5;
+
+  const startAngle = surnameAngle;
+  const duration = 4000;
+  const startTime = performance.now();
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    surnameAngle = startAngle + targetAngle * eased;
+    drawSurnameWheel();
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      surnameAngle = startAngle + targetAngle;
+      drawSurnameWheel();
+      surnameSpinning = false;
+      btnSurnameSpin.disabled = false;
+
+      const item = SURNAMES[targetIdx];
+      surnameResult.innerHTML = `<span style="color:${item.color};font-weight:900;font-size:2em" class="result-val">${item.name}</span>`;
+      surnameResults.unshift({ name: item.name, color: item.color, time: new Date().toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit', second:'2-digit' }) });
+      if (surnameResults.length > 20) surnameResults.pop();
+      renderSurnameHistory();
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function renderSurnameHistory() {
+  surnameHistory.innerHTML = surnameResults.map(r =>
+    `<span class="wheel-history-item" style="color:${r.color};font-weight:700">${r.name} <span style="color:#666;font-size:.8em">${r.time}</span></span>`
+  ).join('');
+}
+
+drawSurnameWheel();
+btnSurnameSpin.addEventListener('click', spinSurnameWheel);
 
 init();
 </script>
